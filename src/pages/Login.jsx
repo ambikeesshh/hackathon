@@ -1,36 +1,55 @@
 // src/pages/Login.jsx
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { loginUser, registerUser } from "../firebase/auth";
-import useStore from "../store/useStore";
-import toast from "react-hot-toast";
-import ThemeToggle from "../components/ThemeToggle";
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { loginUser, registerUser } from '../firebase/auth';
+import useStore from '../store/useStore';
+import toast from 'react-hot-toast';
+import ThemeToggle from '../components/ThemeToggle';
 
-export default function Login() {
-  const [mode, setMode] = useState("login"); // "login" | "register"
-  const [form, setForm] = useState({ email: "", password: "", name: "", role: "student" });
+const getRoleHome = (role) => {
+  if (role === 'admin') return '/admin';
+  if (role === 'faculty') return '/faculty';
+  return '/dashboard';
+};
+
+export default function Login({ initialMode = 'login' }) {
+  const [mode, setMode] = useState(initialMode); // "login" | "register"
+  const [form, setForm] = useState({
+    email: '',
+    password: '',
+    name: '',
+    role: 'student',
+  });
   const [loading, setLoading] = useState(false);
   const setAuthUser = useStore((s) => s.setAuthUser);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const handleSubmit = async () => {
-    if (!form.email || !form.password) return toast.error("Fill in all fields.");
+    if (!form.email || !form.password)
+      return toast.error('Fill in all fields.');
     setLoading(true);
     try {
       let user;
-      if (mode === "login") {
+      if (mode === 'login') {
         user = await loginUser(form.email, form.password);
       } else {
-        if (!form.name) return toast.error("Name required.");
-        user = await registerUser(form.email, form.password, form.name, form.role);
+        if (!form.name) return toast.error('Name required.');
+        user = await registerUser(
+          form.email,
+          form.password,
+          form.name,
+          form.role
+        );
       }
       setAuthUser(user);
       toast.success(`Welcome, ${user.name}!`);
-      navigate("/dashboard");
+      const redirectTo = location.state?.redirectTo;
+      navigate(redirectTo || getRoleHome(user.role), { replace: true });
     } catch (err) {
-      toast.error(err.message || "Authentication failed.");
+      toast.error(err.message || 'Authentication failed.');
     } finally {
       setLoading(false);
     }
@@ -47,27 +66,41 @@ export default function Login() {
           <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-xl font-black text-white shadow-lg shadow-blue-500/30">
             CS
           </div>
-          <h1 className="text-3xl font-black tracking-tight" style={{ color: "var(--text)" }}>CampusSync</h1>
-          <p className="mt-1" style={{ color: "var(--text-muted)" }}>Real-time campus room availability</p>
+          <h1
+            className="text-3xl font-black tracking-tight"
+            style={{ color: 'var(--text)' }}
+          >
+            CampusSync
+          </h1>
+          <p className="mt-1" style={{ color: 'var(--text-muted)' }}>
+            Real-time campus room availability
+          </p>
         </div>
 
         {/* Card */}
         <div
           className="rounded-2xl border p-8"
-          style={{ borderColor: "var(--border)", background: "var(--bg-elevated)", boxShadow: "0 14px 32px rgba(var(--shadow), 0.12)" }}
+          style={{
+            borderColor: 'var(--border)',
+            background: 'var(--bg-elevated)',
+            boxShadow: '0 14px 32px rgba(var(--shadow), 0.12)',
+          }}
         >
           {/* Tab toggle */}
-          <div className="mb-6 flex rounded-xl p-1" style={{ background: "var(--bg-soft)" }}>
-            {["login", "register"].map((m) => (
+          <div
+            className="mb-6 flex rounded-xl p-1"
+            style={{ background: 'var(--bg-soft)' }}
+          >
+            {['login', 'register'].map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
                 className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all capitalize ${
                   mode === m
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "hover:text-slate-700"
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'hover:text-slate-700'
                 }`}
-                style={mode === m ? undefined : { color: "var(--text-muted)" }}
+                style={mode === m ? undefined : { color: 'var(--text-muted)' }}
               >
                 {m}
               </button>
@@ -75,7 +108,7 @@ export default function Login() {
           </div>
 
           <div className="space-y-4">
-            {mode === "register" && (
+            {mode === 'register' && (
               <>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
@@ -83,10 +116,14 @@ export default function Login() {
                   </label>
                   <input
                     value={form.name}
-                    onChange={update("name")}
+                    onChange={update('name')}
                     placeholder="Jane Doe"
                     className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
-                    style={{ borderColor: "var(--border)", color: "var(--text)", background: "var(--bg-elevated)" }}
+                    style={{
+                      borderColor: 'var(--border)',
+                      color: 'var(--text)',
+                      background: 'var(--bg-elevated)',
+                    }}
                   />
                 </div>
                 <div>
@@ -95,9 +132,13 @@ export default function Login() {
                   </label>
                   <select
                     value={form.role}
-                    onChange={update("role")}
+                    onChange={update('role')}
                     className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
-                    style={{ borderColor: "var(--border)", color: "var(--text)", background: "var(--bg-elevated)" }}
+                    style={{
+                      borderColor: 'var(--border)',
+                      color: 'var(--text)',
+                      background: 'var(--bg-elevated)',
+                    }}
                   >
                     <option value="student">Student</option>
                     <option value="faculty">Faculty</option>
@@ -114,10 +155,14 @@ export default function Login() {
               <input
                 type="email"
                 value={form.email}
-                onChange={update("email")}
+                onChange={update('email')}
                 placeholder="you@university.edu"
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
-                style={{ borderColor: "var(--border)", color: "var(--text)", background: "var(--bg-elevated)" }}
+                style={{
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)',
+                  background: 'var(--bg-elevated)',
+                }}
               />
             </div>
 
@@ -128,11 +173,15 @@ export default function Login() {
               <input
                 type="password"
                 value={form.password}
-                onChange={update("password")}
+                onChange={update('password')}
                 placeholder="••••••••"
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
-                style={{ borderColor: "var(--border)", color: "var(--text)", background: "var(--bg-elevated)" }}
-                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                style={{
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)',
+                  background: 'var(--bg-elevated)',
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
               />
             </div>
 
@@ -141,12 +190,19 @@ export default function Login() {
               disabled={loading}
               className="mt-2 w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/30 transition-colors hover:bg-blue-700 disabled:opacity-60"
             >
-              {loading ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
+              {loading
+                ? 'Please wait…'
+                : mode === 'login'
+                  ? 'Sign In'
+                  : 'Create Account'}
             </button>
           </div>
         </div>
 
-        <p className="mt-4 text-center text-xs" style={{ color: "var(--text-subtle)" }}>
+        <p
+          className="mt-4 text-center text-xs"
+          style={{ color: 'var(--text-subtle)' }}
+        >
           Campus Room Availability System
         </p>
       </div>
