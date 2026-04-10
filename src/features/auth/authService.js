@@ -2,6 +2,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  onAuthStateChanged,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
@@ -10,6 +11,13 @@ import { FIREBASE_ERROR_MESSAGES } from '../../lib/constants';
 const mapFirebaseError = (error) => {
   if (!error?.code) return FIREBASE_ERROR_MESSAGES.default;
   return FIREBASE_ERROR_MESSAGES[error.code] || FIREBASE_ERROR_MESSAGES.default;
+};
+
+export const subscribeAuthState = (callback) => onAuthStateChanged(auth, callback);
+
+export const fetchUserProfile = async (uid) => {
+  const snap = await getDoc(doc(db, 'users', uid));
+  return snap.exists() ? { uid, ...snap.data() } : null;
 };
 
 export const registerUser = async (name, email, password, role) => {

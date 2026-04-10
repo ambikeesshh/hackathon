@@ -1,6 +1,6 @@
 // src/hooks/useAuth.js
 import { useEffect } from "react";
-import { subscribeAuthState, fetchUserProfile } from "../firebase/auth";
+import { subscribeAuthState, fetchUserProfile } from "../features/auth/authService";
 import useStore from "../store/useStore";
 
 /**

@@ -1,3 +1,6 @@
+import { STATUS } from '../lib/constants';
+import useStore from '../store/useStore';
+
 export default function Filters({
   search,
   onSearch,
@@ -8,32 +11,42 @@ export default function Filters({
   minCapacity,
   onMinCapacity,
   typeOptions,
+  equipment,
+  onEquipment,
+  equipmentOptions,
 }) {
+  const theme = useStore((s) => s.theme);
+  const isDark = theme === 'dark';
+
   const handleReset = () => {
     onSearch("");
     onAvailability("all");
     onRoomType("all");
     onMinCapacity(0);
+    if (onEquipment) onEquipment("all");
   };
+
+  const inputClass = `w-full rounded-lg border-2 ${isDark ? 'border-slate-600 bg-slate-800 text-slate-200' : 'border-slate-900 bg-white text-slate-700'} py-2 pl-9 pr-3 text-sm font-bold outline-none transition-all duration-200 placeholder:text-slate-400 focus:bg-yellow-50`;
+  const selectClass = `rounded-lg border-2 ${isDark ? 'border-slate-600 bg-slate-800 text-slate-200' : 'border-slate-900 bg-white text-slate-700'} px-3 py-2 text-sm font-bold outline-none transition-all duration-200 focus:bg-yellow-50`;
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className={`font-mono text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
           Smart Filters
         </h2>
         <button
           type="button"
           onClick={handleReset}
-          className="rounded-lg border border-gray-300 bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 transition-all duration-200 hover:border-orange-500 hover:text-orange-600 active:scale-95 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-orange-500 dark:hover:text-orange-400"
+          className={`rounded-lg border-2 ${isDark ? 'border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700' : 'border-slate-900 bg-white text-slate-600 hover:bg-yellow-400 hover:text-slate-900'} px-3 py-1 text-xs font-bold transition-all duration-200 active:scale-95`}
         >
           Reset
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
         <div className="relative">
-          <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none">
+          <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none">
             <circle cx="11" cy="11" r="6" stroke="currentColor" strokeWidth="1.7" />
             <path d="M16 16l4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
           </svg>
@@ -41,29 +54,40 @@ export default function Filters({
             value={search}
             onChange={(e) => onSearch(e.target.value)}
             placeholder="Search by room name"
-            className="w-full rounded-lg border border-gray-300 bg-gray-100 py-2 pl-9 pr-3 text-sm text-gray-700 outline-none transition-all duration-200 placeholder:text-gray-400 focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            className={inputClass}
           />
         </div>
 
         <select
           value={availability}
           onChange={(e) => onAvailability(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-700 outline-none transition-all duration-200 focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          className={selectClass}
         >
           <option value="all">All availability</option>
-          <option value="free">Free</option>
-          <option value="reserved">Reserved</option>
-          <option value="occupied">Occupied</option>
+          <option value={STATUS.FREE}>Free</option>
+          <option value={STATUS.RESERVED}>Reserved</option>
+          <option value={STATUS.OCCUPIED}>Occupied</option>
         </select>
 
         <select
           value={roomType}
           onChange={(e) => onRoomType(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-700 outline-none transition-all duration-200 focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          className={selectClass}
         >
           <option value="all">All room types</option>
           {typeOptions.map((type) => (
             <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
+
+        <select
+          value={equipment}
+          onChange={(e) => onEquipment(e.target.value)}
+          className={selectClass}
+        >
+          <option value="all">All equipment</option>
+          {equipmentOptions.map((eq) => (
+            <option key={eq} value={eq}>{eq}</option>
           ))}
         </select>
 
@@ -73,7 +97,7 @@ export default function Filters({
           value={minCapacity}
           onChange={(e) => onMinCapacity(Number(e.target.value) || 0)}
           placeholder="Min capacity"
-          className="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-700 outline-none transition-all duration-200 placeholder:text-gray-400 focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          className={inputClass}
         />
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { ROLES } from '../../lib/constants';
 
 const BOOKINGS_COLLECTION = 'bookings';
 
@@ -15,11 +16,11 @@ export const useBookings = ({ role, studentId, resourceId } = {}) => {
 
     const constraints = [];
 
-    if (role === 'student' && studentId) {
+    if (role === ROLES.STUDENT && studentId) {
       constraints.push(where('studentId', '==', studentId));
     }
 
-    if (role === 'faculty' && resourceId) {
+    if (role === ROLES.FACULTY && resourceId) {
       constraints.push(where('resourceId', '==', resourceId));
     }
 

@@ -1,5 +1,6 @@
 // firestore.rules
 // Deploy with: firebase deploy --only firestore:rules
+// Updated: Fixed userRole for new users
 
 rules_version = '2';
 service cloud.firestore {
@@ -11,13 +12,25 @@ service cloud.firestore {
     }
 
     function userRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      // Handle case where user profile doesn't exist yet
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc.data.role;
     }
 
-    function isStudent()  { return isSignedIn() && userRole() == 'student'; }
-    function isFaculty()  { return isSignedIn() && userRole() == 'faculty'; }
-    function isAdmin()    { return isSignedIn() && userRole() == 'admin'; }
+    function hasValidRole() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc != null && userDoc.data.role in ['student', 'faculty', 'admin'];
+    }
+
+    function isStudent()  { return isSignedIn() && hasValidRole() && userRole() == 'student'; }
+    function isFaculty()  { return isSignedIn() && hasValidRole() && userRole() == 'faculty'; }
+    function isAdmin()    { return isSignedIn() && hasValidRole() && userRole() == 'admin'; }
     function isFacultyOrAdmin() { return isFaculty() || isAdmin(); }
+
+    // Valid status values
+    function isValidStatus(status) {
+      return status in ['free', 'occupied', 'partial', 'reserved'];
+    }
 
     // ── /users ─────────────────────────────────────────────────
     match /users/{userId} {
@@ -36,22 +49,46 @@ service cloud.firestore {
       allow read: if isSignedIn();
 
       // Only faculty or admin can update room status fields
+      // Must validate: status enum, updatedBy must equal current user
       allow update: if isFacultyOrAdmin()
         && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['status', 'updatedAt', 'updatedBy', 'autoResetAt']);
+            .hasOnly(['status', 'updatedAt', 'updatedBy', 'autoResetAt', 'note', 'reservedBy', 'reservedUntil'])
+        && request.resource.data.updatedBy == request.auth.uid
+        && isValidStatus(request.resource.data.status);
 
       // Only admin can create / delete rooms
       allow create: if isAdmin();
       allow delete: if isAdmin();
     }
 
-    // ── /logs ──────────────────────────────────────────────────
-    match /logs/{logId} {
-      // Anyone can write logs (faculty/admin trigger them)
+    // ── /activityLogs ──────────────────────────────────────────────────
+    match /activityLogs/{logId} {
+      // Faculty/admin can write logs
       allow create: if isFacultyOrAdmin();
-      // Only admin reads logs (for analytics)
-      allow read: if isAdmin();
+      // Anyone signed in can read logs
+      allow read: if isSignedIn();
       allow update, delete: if false;
+    }
+
+    // ── /bookings ───────────────────────────────────────────────
+    match /bookings/{bookingId} {
+      // Students can read their own bookings
+      allow read: if isSignedIn() 
+        && (request.auth.uid == resource.data.studentId || isAdmin() || isFaculty());
+      
+      // Students can create booking requests
+      allow create: if isSignedIn() 
+        && isStudent()
+        && request.resource.data.studentId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      
+      // Faculty can update (approve/decline) for their assigned resources
+      // Admin can update any booking
+      allow update: if (isAdmin()) 
+        || (isFaculty() && request.resource.data.status in ['pending', 'approved', 'declined']);
+      
+      // Only admin can delete
+      allow delete: if isAdmin();
     }
   }
 }

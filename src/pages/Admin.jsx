@@ -7,13 +7,13 @@ import QRModal from "../components/QRModal";
 import ActivityFeed from "../components/ActivityFeed";
 import { useActivityLogs } from "../hooks/useActivityLogs";
 import toast from "react-hot-toast";
+import { STATUS } from "../lib/constants";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
 
 export default function Admin() {
   const rooms = useStore((s) => s.rooms);
-  const theme = useStore((s) => s.theme);
   const logs = useActivityLogs(200);
   const [newRoom, setNewRoom] = useState({
     name: "",
@@ -32,7 +32,7 @@ export default function Admin() {
     () =>
       rooms.map((r) => ({
         name: r.name.length > 12 ? r.name.slice(0, 12) + "…" : r.name,
-        status: effectiveStatus(r) === "occupied" ? 1 : 0,
+        status: effectiveStatus(r) === STATUS.OCCUPIED ? 1 : 0,
         fullName: r.name,
       })),
     [rooms]
@@ -81,12 +81,11 @@ export default function Admin() {
     }
   };
 
-  const freeCount = rooms.filter((r) => effectiveStatus(r) === "free").length;
+  const freeCount = rooms.filter((r) => effectiveStatus(r) === STATUS.FREE).length;
   const occupiedCount = rooms.length - freeCount;
-  const isDark = theme === "dark";
 
   const analytics = useMemo(() => {
-    const usageCount = logs.filter((log) => log.action === "occupied").length;
+    const usageCount = logs.filter((log) => log.action === STATUS.OCCUPIED).length;
 
     const peakHoursMap = logs.reduce((acc, log) => {
       if (!log.timestamp) return acc;
@@ -99,60 +98,63 @@ export default function Admin() {
     return {
       usageCount,
       peakHour: peakHourEntry ? `${peakHourEntry[0]} (${peakHourEntry[1]} actions)` : "N/A",
-      reservationActions: logs.filter((log) => log.action === "reserved").length,
+      reservationActions: logs.filter((log) => log.action === STATUS.RESERVED).length,
     };
   }, [logs]);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Admin Panel</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage rooms and view analytics</p>
+      {/* Header */}
+      <div className="rounded-2xl border-2 border-slate-900 bg-white p-6 shadow-[4px_4px_0px_0px_#0f172a]">
+        <h1 className="text-2xl font-black text-slate-900">Admin Panel</h1>
+        <p className="mt-1 font-mono text-xs uppercase tracking-widest text-slate-500">
+          Manage rooms and view analytics
+        </p>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-6">
-        <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 p-4 shadow-sm dark:border-gray-800 dark:from-gray-900 dark:to-gray-800">
-          <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{rooms.length}</p>
-          <p className="mt-1 text-sm text-gray-400">Total</p>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-2xl border-2 border-slate-900 bg-white p-4 shadow-[4px_4px_0px_0px_#0f172a]">
+          <p className="text-3xl font-black text-slate-900">{rooms.length}</p>
+          <p className="mt-1 font-mono text-xs uppercase text-slate-500">Total</p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 p-4 shadow-sm dark:border-gray-800 dark:from-gray-900 dark:to-gray-800">
-          <p className="text-2xl font-semibold text-green-500 dark:text-green-400">{freeCount}</p>
-          <p className="mt-1 text-sm text-gray-400">Free</p>
+        <div className="rounded-2xl border-2 border-slate-900 bg-green-100 p-4 shadow-[4px_4px_0px_0px_#0f172a]">
+          <p className="text-3xl font-black text-green-600">{freeCount}</p>
+          <p className="mt-1 font-mono text-xs uppercase text-green-700">Free</p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 p-4 shadow-sm dark:border-gray-800 dark:from-gray-900 dark:to-gray-800">
-          <p className="text-2xl font-semibold text-red-500 dark:text-red-400">{occupiedCount}</p>
-          <p className="mt-1 text-sm text-gray-400">Occupied</p>
+        <div className="rounded-2xl border-2 border-slate-900 bg-red-100 p-4 shadow-[4px_4px_0px_0px_#0f172a]">
+          <p className="text-3xl font-black text-red-600">{occupiedCount}</p>
+          <p className="mt-1 font-mono text-xs uppercase text-red-700">Occupied</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <p className="text-sm uppercase tracking-wide text-gray-400">Usage Count</p>
-          <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">{analytics.usageCount}</p>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border-2 border-slate-900 bg-white p-4 shadow-[4px_4px_0px_0px_#0f172a]">
+          <p className="font-mono text-xs uppercase tracking-widest text-slate-500">Usage Count</p>
+          <p className="mt-2 text-2xl font-black text-slate-900">{analytics.usageCount}</p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <p className="text-sm uppercase tracking-wide text-gray-400">Peak Hour</p>
-          <p className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">{analytics.peakHour}</p>
+        <div className="rounded-2xl border-2 border-slate-900 bg-white p-4 shadow-[4px_4px_0px_0px_#0f172a]">
+          <p className="font-mono text-xs uppercase tracking-widest text-slate-500">Peak Hour</p>
+          <p className="mt-2 text-sm font-bold text-slate-900">{analytics.peakHour}</p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <p className="text-sm uppercase tracking-wide text-gray-400">Reservations Logged</p>
-          <p className="mt-2 text-2xl font-semibold text-yellow-500 dark:text-yellow-400">{analytics.reservationActions}</p>
+        <div className="rounded-2xl border-2 border-slate-900 bg-yellow-100 p-4 shadow-[4px_4px_0px_0px_#0f172a]">
+          <p className="font-mono text-xs uppercase tracking-widest text-yellow-700">Reservations</p>
+          <p className="mt-2 text-2xl font-black text-yellow-600">{analytics.reservationActions}</p>
         </div>
       </div>
 
       {/* Analytics chart */}
       {rooms.length > 0 && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">
+        <div className="rounded-2xl border-2 border-slate-900 bg-white p-6 shadow-[4px_4px_0px_0px_#0f172a]">
+          <h2 className="mb-4 font-mono text-xs font-bold uppercase tracking-widest text-slate-500">
             Room Status Overview
           </h2>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={chartData} barSize={24}>
               <XAxis
                 dataKey="name"
-                tick={{ fontSize: 11, fill: isDark ? "#90a0ba" : "#64748b" }}
-                axisLine={false}
+                tick={{ fontSize: 11, fill: "#64748b" }}
+                axisLine={{ stroke: "#0f172a", strokeWidth: 2 }}
                 tickLine={false}
               />
               <YAxis hide domain={[0, 1]} />
@@ -160,32 +162,28 @@ export default function Admin() {
                 formatter={(v, _, p) => [v === 1 ? "Occupied" : "Free", p.payload.fullName]}
                 contentStyle={{
                   borderRadius: 10,
-                  border: `1px solid ${isDark ? "#1f2937" : "#e5e7eb"}`,
+                  border: "2px solid #0f172a",
                   fontSize: 12,
-                  background: isDark ? "#111827" : "#ffffff",
-                  color: isDark ? "#f3f4f6" : "#111827",
+                  background: "#ffffff",
+                  color: "#0f172a",
                 }}
               />
               <Bar dataKey="status" radius={[6, 6, 0, 0]}>
                 {chartData.map((entry) => (
                   <Cell
                     key={entry.fullName}
-                    fill={entry.status === 1 ? "var(--chart-occupied)" : "var(--chart-free)"}
+                    fill={entry.status === 1 ? "#ef4444" : "#22c55e"}
                   />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <p className="mt-2 text-center text-xs text-gray-400">
-            <span className="mr-1 inline-block h-2 w-2 rounded-full" style={{ background: "var(--chart-free)" }} />Free
-            <span className="ml-3 mr-1 inline-block h-2 w-2 rounded-full" style={{ background: "var(--chart-occupied)" }} />Occupied
-          </p>
         </div>
       )}
 
       {/* Add room */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">
+      <div className="rounded-2xl border-2 border-slate-900 bg-white p-6 shadow-[4px_4px_0px_0px_#0f172a]">
+        <h2 className="mb-4 font-mono text-xs font-bold uppercase tracking-widest text-slate-500">
           Add New Room
         </h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -194,25 +192,25 @@ export default function Admin() {
             onChange={(e) => setNewRoom((prev) => ({ ...prev, name: e.target.value }))}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="Room name"
-            className="flex-1 rounded-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-sm text-gray-700 outline-none transition-all duration-200 focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            className="rounded-lg border-2 border-slate-900 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 outline-none transition-all focus:bg-yellow-50"
           />
           <input
             value={newRoom.building}
             onChange={(e) => setNewRoom((prev) => ({ ...prev, building: e.target.value }))}
             placeholder="Building"
-            className="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-sm text-gray-700 outline-none transition-all duration-200 focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            className="rounded-lg border-2 border-slate-900 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 outline-none transition-all focus:bg-yellow-50"
           />
           <input
             value={newRoom.floor}
             onChange={(e) => setNewRoom((prev) => ({ ...prev, floor: e.target.value }))}
             placeholder="Floor"
-            className="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-sm text-gray-700 outline-none transition-all duration-200 focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            className="rounded-lg border-2 border-slate-900 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 outline-none transition-all focus:bg-yellow-50"
           />
           <input
             value={newRoom.type}
             onChange={(e) => setNewRoom((prev) => ({ ...prev, type: e.target.value }))}
             placeholder="Type (classroom, lab, etc.)"
-            className="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-sm text-gray-700 outline-none transition-all duration-200 focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            className="rounded-lg border-2 border-slate-900 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 outline-none transition-all focus:bg-yellow-50"
           />
           <input
             value={newRoom.capacity}
@@ -220,62 +218,63 @@ export default function Admin() {
             min="0"
             onChange={(e) => setNewRoom((prev) => ({ ...prev, capacity: Number(e.target.value) || 0 }))}
             placeholder="Capacity"
-            className="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-sm text-gray-700 outline-none transition-all duration-200 focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            className="rounded-lg border-2 border-slate-900 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 outline-none transition-all focus:bg-yellow-50"
           />
           <input
             value={newRoom.features}
             onChange={(e) => setNewRoom((prev) => ({ ...prev, features: e.target.value }))}
             placeholder="Features (comma-separated)"
-            className="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-sm text-gray-700 outline-none transition-all duration-200 focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            className="rounded-lg border-2 border-slate-900 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 outline-none transition-all focus:bg-yellow-50"
           />
           <input
             value={newRoom.note}
             onChange={(e) => setNewRoom((prev) => ({ ...prev, note: e.target.value }))}
             placeholder="Optional note"
-            className="md:col-span-2 rounded-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-sm text-gray-700 outline-none transition-all duration-200 focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            className="md:col-span-2 rounded-lg border-2 border-slate-900 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 outline-none transition-all focus:bg-yellow-50"
           />
           <button
             onClick={handleAdd}
             disabled={adding}
-            className="md:col-span-2 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-medium text-white ring-1 ring-orange-500/20 transition-all duration-200 hover:bg-orange-600 active:scale-95 disabled:opacity-60"
+            className="md:col-span-2 rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-900 ring-2 ring-slate-900 transition-all duration-200 hover:bg-yellow-300 active:scale-95 disabled:opacity-60"
           >
-            {adding ? "Adding…" : "Add Room"}
+            {adding ? "Adding..." : "Add Room"}
           </button>
         </div>
       </div>
 
+      {/* Activity Feed */}
       <div>
-        <ActivityFeed maxRows={30} title="Latest Room Actions" />
+        <ActivityFeed maxRows={15} title="Latest Room Actions" />
       </div>
 
       {/* Room list */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="border-b border-gray-200 bg-gray-50 px-6 py-3 dark:border-gray-800 dark:bg-gray-800/70">
-          <p className="text-sm uppercase tracking-wide text-gray-400">Rooms ({rooms.length})</p>
+      <div className="overflow-hidden rounded-2xl border-2 border-slate-900 bg-white shadow-[4px_4px_0px_0px_#0f172a]">
+        <div className="border-b-2 border-slate-900 bg-slate-100 px-6 py-3">
+          <p className="font-mono text-xs font-bold uppercase tracking-widest text-slate-600">Rooms ({rooms.length})</p>
         </div>
         {rooms.length === 0 && (
-          <div className="px-6 py-10 text-center text-sm text-gray-400">
+          <div className="px-6 py-10 text-center font-mono text-sm text-slate-500">
             No rooms yet. Add one above.
           </div>
         )}
         {rooms.map((room) => {
           const status = effectiveStatus(room);
           return (
-            <div key={room.id} className="flex items-center justify-between gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+            <div key={room.id} className="flex items-center justify-between gap-3 border-b border-slate-200 px-6 py-4 last:border-b-0">
               <div className="flex items-center gap-3 min-w-0">
                 <span
-                  className={`flex-shrink-0 h-2.5 w-2.5 rounded-full ${
-                    status === "free" ? "bg-green-400" : status === "reserved" ? "bg-yellow-400" : "bg-red-400"
+                  className={`flex-shrink-0 h-3 w-3 rounded-full ${
+                    status === STATUS.FREE ? "bg-green-500" : status === STATUS.RESERVED ? "bg-yellow-500" : "bg-red-500"
                   }`}
                 />
-                <span className="truncate font-medium text-gray-800 dark:text-gray-100">{room.name}</span>
+                <span className="truncate font-bold text-slate-900">{room.name}</span>
                 <span
-                  className={`hidden sm:inline text-xs font-medium px-2 py-0.5 rounded-full ${
-                    status === "free"
-                      ? "bg-green-400/10 text-green-400"
-                      : status === "reserved"
-                        ? "bg-yellow-400/10 text-yellow-400"
-                        : "bg-red-400/10 text-red-400"
+                  className={`hidden sm:inline text-xs font-bold uppercase px-2 py-0.5 rounded-lg border-2 border-slate-900 ${
+                    status === STATUS.FREE
+                      ? "bg-green-100 text-green-600"
+                      : status === STATUS.RESERVED
+                        ? "bg-yellow-100 text-yellow-600"
+                        : "bg-red-100 text-red-600"
                   }`}
                 >
                   {status}
@@ -284,13 +283,13 @@ export default function Admin() {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={() => setQrRoom(room)}
-                  className="rounded-xl border border-gray-300 bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 transition-all duration-200 hover:bg-gray-200 active:scale-95 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  className="rounded-lg border-2 border-slate-900 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition-all duration-200 hover:bg-yellow-400 active:scale-95"
                 >
                   QR
                 </button>
                 <button
                   onClick={() => setConfirmDelete(room)}
-                  className="rounded-xl bg-red-500/90 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 hover:bg-red-600 active:scale-95"
+                  className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-bold text-white transition-all duration-200 hover:bg-red-600 active:scale-95"
                 >
                   Delete
                 </button>
@@ -310,23 +309,23 @@ export default function Admin() {
           onClick={() => setConfirmDelete(null)}
         >
           <div
-            className="mx-4 w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-800 dark:bg-gray-900"
+            className="mx-4 w-full max-w-sm rounded-2xl border-2 border-slate-900 bg-[#fdfbf7] p-6 shadow-[8px_8px_0px_0px_#0f172a]"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">Delete Room?</h3>
-            <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+            <h3 className="mb-2 text-lg font-black text-slate-900">Delete Room?</h3>
+            <p className="mb-5 text-sm font-medium text-slate-600">
               <strong>{confirmDelete.name}</strong> will be permanently removed.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="flex-1 rounded-xl border border-gray-300 bg-gray-100 py-2.5 text-sm font-medium text-gray-600 transition-all duration-200 hover:bg-gray-200 active:scale-95 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="flex-1 rounded-xl border-2 border-slate-900 bg-white py-2.5 text-sm font-bold text-slate-600 transition-all duration-200 hover:bg-slate-100 active:scale-95"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDelete(confirmDelete)}
-                className="flex-1 rounded-xl bg-red-500/90 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:bg-red-600 active:scale-95"
+                className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-bold text-white transition-all duration-200 hover:bg-red-600 active:scale-95"
               >
                 Delete
               </button>

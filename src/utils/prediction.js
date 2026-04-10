@@ -1,3 +1,5 @@
+import { STATUS } from '../lib/constants';
+
 const dayHourKey = (date) => `${date.getDay()}-${date.getHours()}`;
 
 export const getPredictedAvailability = (logs, resourceId) => {
@@ -22,7 +24,7 @@ export const getPredictedAvailability = (logs, resourceId) => {
 
     const entry = buckets.get(key);
     entry.totalCount += 1;
-    if (log.newStatus === 'free' || log.action === 'free') entry.freeCount += 1;
+    if (log.newStatus === STATUS.FREE || log.action === STATUS.FREE) entry.freeCount += 1;
   });
 
   const map = {};

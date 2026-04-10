@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -28,8 +29,9 @@ import {
 } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import useStore from '../store/useStore';
-import { loginUser, logoutUser, registerUser } from '../firebase/auth';
+import { loginUser, logoutUser, registerUser } from '../features/auth/authService';
 import { db } from '../firebase/config';
+import ThemeToggle from './ThemeToggle';
 import {
   effectiveStatus,
   isReservationActive,
@@ -2226,11 +2228,14 @@ export function TapeMarquee() {
 
 // --- Main Layout ---
 export default function SketchyPage() {
+  const navigate = useNavigate();
   const authUser = useStore((s) => s.authUser);
   const setAuthUser = useStore((s) => s.setAuthUser);
   const clearAuth = useStore((s) => s.clearAuth);
   const rooms = useStore((s) => s.rooms);
   const roomsLoading = useStore((s) => s.roomsLoading);
+  const theme = useStore((s) => s.theme);
+  const isDark = theme === 'dark';
   const logs = useActivityLogs(20);
 
   const [authOpen, setAuthOpen] = useState(false);
@@ -2356,16 +2361,37 @@ export default function SketchyPage() {
 
   const handlePrimaryAction = () => {
     if (authUser) {
-      scrollToSection('live-resources');
+      // Navigate to role-based dashboard
+      if (authUser.role === 'admin') {
+        navigate('/admin');
+      } else if (authUser.role === 'faculty') {
+        navigate('/faculty');
+      } else {
+        navigate('/dashboard');
+      }
       return;
     }
+    // Open auth modal for login/register
     setMode('login');
     setAuthOpen(true);
   };
 
+  const handleSecondaryAction = () => {
+    if (authUser) {
+      navigate('/dashboard');
+    } else {
+      setMode('register');
+      setAuthOpen(true);
+    }
+  };
+
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
-    if (!element) return;
+    if (!element) {
+      // If section doesn't exist, scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
 
     setActiveSection(navSectionMap[sectionId] || sectionId);
     setMobileNavOpen(false);
@@ -2487,11 +2513,11 @@ export default function SketchyPage() {
   }, [navSectionMap]);
 
   return (
-    <main className="relative min-h-screen w-full text-slate-800 overflow-x-hidden font-sans selection:bg-yellow-300 selection:text-black bg-[#fdfbf7]">
+    <main className={`relative min-h-screen w-full text-slate-800 overflow-x-hidden font-sans selection:bg-yellow-300 selection:text-black ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#fdfbf7]'}`}>
       <SquiggleFilter />
       <GraphPaper />
 
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-200 bg-[#fdfbf7]/90 px-4 backdrop-blur-sm">
+      <nav className={`fixed top-0 left-0 right-0 z-50 border-b ${isDark ? 'border-slate-700 bg-[#1a1a1a]/95' : 'border-slate-200 bg-[#fdfbf7]/95'} px-4 backdrop-blur-sm`}>
         <div className="mx-auto w-full max-w-7xl">
           <div className="flex items-center justify-between gap-3 py-4">
             <div className="flex items-center gap-3">
@@ -2512,6 +2538,7 @@ export default function SketchyPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               {authUser ? (
                 <>
                   <span className="hidden rounded-full border-2 border-slate-900 bg-yellow-100 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-widest md:inline-flex">
@@ -2618,15 +2645,21 @@ export default function SketchyPage() {
         stats={stats}
         roomsLoading={roomsLoading}
         onPrimaryAction={handlePrimaryAction}
-        primaryLabel={authUser ? 'Open Live Status' : 'Open CampusSync'}
-        onSecondaryAction={() => scrollToSection('process-path')}
+        primaryLabel={authUser ? 'Open Dashboard' : 'Get Started'}
+        onSecondaryAction={() => navigate('/login')}
       />
       <TapeMarquee />
       <FeatureBoard />
       <CampusPulseBoard
         rooms={rooms}
         logs={logs}
-        onNavigate={scrollToSection}
+        onNavigate={(section) => {
+          if (authUser) {
+            navigate('/dashboard');
+          } else {
+            navigate('/login');
+          }
+        }}
       />
       <LiveResourceLedger
         rooms={rooms}
@@ -2648,7 +2681,15 @@ export default function SketchyPage() {
       <ActivityStream logs={logs} roomsById={roomsById} />
       <PricingDrafts />
       <BlueprintFooter
-        onNavigate={scrollToSection}
+        onNavigate={(section) => {
+          if (section === 'live-resources') {
+            navigate('/login');
+          } else if (section === 'process-path') {
+            navigate('/login');
+          } else if (section === 'live-demo') {
+            navigate('/login');
+          }
+        }}
         onOpenExternal={openExternal}
       />
 

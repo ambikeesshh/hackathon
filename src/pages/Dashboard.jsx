@@ -5,6 +5,7 @@ import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardSidebar from "../components/dashboard/DashboardSidebar";
 import RoomsSection from "../components/dashboard/RoomsSection";
 import { effectiveStatus } from "../utils/helpers";
+import { ROLES } from "../lib/constants";
 
 export default function Dashboard() {
   const rooms = useStore((s) => s.rooms);
@@ -14,8 +15,9 @@ export default function Dashboard() {
   const [availability, setAvailability] = useState("all");
   const [roomType, setRoomType] = useState("all");
   const [minCapacity, setMinCapacity] = useState(0);
+  const [equipment, setEquipment] = useState("all");
 
-  const canToggle = authUser?.role === "faculty" || authUser?.role === "admin";
+  const canToggle = authUser?.role === ROLES.FACULTY || authUser?.role === ROLES.ADMIN;
 
   const stats = useMemo(() => {
     const statusCount = rooms.reduce(
@@ -40,6 +42,14 @@ export default function Dashboard() {
     [rooms]
   );
 
+  const equipmentOptions = useMemo(() => {
+    const tags = new Set();
+    rooms.forEach((room) => {
+      (room.equipmentTags || []).forEach((tag) => tags.add(tag));
+    });
+    return [...tags].sort();
+  }, [rooms]);
+
   const filtered = useMemo(() => {
     return rooms.filter((r) => {
       const status = effectiveStatus(r);
@@ -47,9 +57,10 @@ export default function Dashboard() {
       const matchSearch = r.name.toLowerCase().includes(search.toLowerCase());
       const matchType = roomType === "all" || r.type === roomType;
       const matchCapacity = (r.capacity || 0) >= minCapacity;
-      return matchAvailability && matchSearch && matchType && matchCapacity;
+      const matchEquipment = equipment === "all" || (r.equipmentTags || []).includes(equipment);
+      return matchAvailability && matchSearch && matchType && matchCapacity && matchEquipment;
     });
-  }, [rooms, availability, search, roomType, minCapacity]);
+  }, [rooms, availability, search, roomType, minCapacity, equipment]);
 
   if (roomsLoading) {
     return (
@@ -76,6 +87,9 @@ export default function Dashboard() {
           minCapacity={minCapacity}
           onMinCapacity={setMinCapacity}
           typeOptions={typeOptions}
+          equipment={equipment}
+          onEquipment={setEquipment}
+          equipmentOptions={equipmentOptions}
           rooms={filtered}
           canToggle={canToggle}
         />

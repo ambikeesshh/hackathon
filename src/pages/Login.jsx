@@ -1,14 +1,15 @@
 // src/pages/Login.jsx
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { loginUser, registerUser } from '../firebase/auth';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { loginUser, registerUser } from '../features/auth/authService';
 import useStore from '../store/useStore';
 import toast from 'react-hot-toast';
 import ThemeToggle from '../components/ThemeToggle';
+import { ROLES } from '../lib/constants';
 
 const getRoleHome = (role) => {
-  if (role === 'admin') return '/admin';
-  if (role === 'faculty') return '/faculty';
+  if (role === ROLES.ADMIN) return '/admin';
+  if (role === ROLES.FACULTY) return '/faculty';
   return '/dashboard';
 };
 
@@ -30,6 +31,17 @@ export default function Login({ initialMode = 'login' }) {
   const handleSubmit = async () => {
     if (!form.email || !form.password)
       return toast.error('Fill in all fields.');
+    
+    // Password validation
+    if (mode === 'register' && form.password.length < 6) {
+      return toast.error('Password must be at least 6 characters.');
+    }
+    
+    // Email validation
+    if (!form.email.includes('@')) {
+      return toast.error('Please enter a valid email address.');
+    }
+    
     setLoading(true);
     try {
       let user;
@@ -38,9 +50,9 @@ export default function Login({ initialMode = 'login' }) {
       } else {
         if (!form.name) return toast.error('Name required.');
         user = await registerUser(
+          form.name,
           form.email,
           form.password,
-          form.name,
           form.role
         );
       }
@@ -184,19 +196,28 @@ export default function Login({ initialMode = 'login' }) {
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
               />
             </div>
-
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="mt-2 w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/30 transition-colors hover:bg-blue-700 disabled:opacity-60"
-            >
-              {loading
-                ? 'Please wait…'
-                : mode === 'login'
-                  ? 'Sign In'
-                  : 'Create Account'}
-            </button>
           </div>
+
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="mt-2 w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/30 transition-colors hover:bg-blue-700 disabled:opacity-60"
+          >
+            {loading
+              ? 'Please wait…'
+              : mode === 'login'
+                ? 'Sign In'
+                : 'Create Account'}
+          </button>
+
+          {mode === 'login' && (
+            <p className="mt-4 text-center text-xs" style={{ color: 'var(--text-subtle)' }}>
+              Don't have an account?{' '}
+              <Link to="/register" className="text-blue-600 hover:underline">
+                Register
+              </Link>
+            </p>
+          )}
         </div>
 
         <p

@@ -1,4 +1,5 @@
 // src/utils/helpers.js
+import { STATUS } from '../lib/constants';
 
 const toMillis = (value) => {
   if (!value) return null;
@@ -37,13 +38,13 @@ export const normalizeRoom = (room) => ({
 export const effectiveStatus = (room) => {
   const normalized = normalizeRoom(room);
 
-  if (normalized.status === 'occupied' && normalized.autoResetAt) {
+  if (normalized.status === STATUS.OCCUPIED && normalized.autoResetAt) {
     const resetMs = toMillis(normalized.autoResetAt);
-    if (Date.now() > resetMs) return 'free';
-    return 'occupied';
+    if (Date.now() > resetMs) return STATUS.FREE;
+    return STATUS.OCCUPIED;
   }
 
-  if (isReservationActive(normalized)) return 'reserved';
+  if (isReservationActive(normalized)) return STATUS.RESERVED;
 
   return normalized.status;
 };

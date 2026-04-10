@@ -11,7 +11,10 @@ import {
 import { toggleRoomStatus, addLog } from '../firebase/rooms';
 import QRModal from '../components/QRModal';
 import ReservationUI from '../components/ReservationUI';
+import BookingRequest from '../components/BookingRequest';
+import BookingList from '../components/BookingList';
 import toast from 'react-hot-toast';
+import { ROLES, STATUS } from '../lib/constants';
 
 export default function RoomPage() {
   const { roomId, resourceId } = useParams();
@@ -23,7 +26,7 @@ export default function RoomPage() {
 
   const resolvedRoomId = roomId || resourceId;
   const room = rooms.find((r) => r.id === resolvedRoomId);
-  const canToggle = authUser?.role === 'faculty' || authUser?.role === 'admin';
+  const canToggle = authUser?.role === ROLES.FACULTY || authUser?.role === ROLES.ADMIN;
 
   if (!room) {
     return (
@@ -43,8 +46,8 @@ export default function RoomPage() {
   }
 
   const status = effectiveStatus(room);
-  const isFree = status === 'free';
-  const isReserved = status === 'reserved';
+  const isFree = status === STATUS.FREE;
+  const isReserved = status === STATUS.RESERVED;
 
   const handleToggle = async () => {
     setToggling(true);
@@ -53,10 +56,10 @@ export default function RoomPage() {
       await addLog(
         room.id,
         authUser.uid,
-        isFree || isReserved ? 'occupied' : 'free',
+        isFree || isReserved ? STATUS.OCCUPIED : STATUS.FREE,
         room.note || ''
       );
-      toast.success(`Marked as ${isFree || isReserved ? 'occupied' : 'free'}`);
+      toast.success(`Marked as ${isFree || isReserved ? STATUS.OCCUPIED : STATUS.FREE}`);
     } catch {
       toast.error('Failed to update room status.');
     } finally {
@@ -222,6 +225,15 @@ export default function RoomPage() {
             authUser={authUser}
             canManage={canToggle}
           />
+        </div>
+
+        <div className="mb-4">
+          <BookingRequest room={room} />
+        </div>
+
+        <div className="mb-4">
+          <h3 className="mb-2 text-sm font-semibold" style={{ color: 'var(--text)' }}>Booking Requests</h3>
+          <BookingList resourceId={room.id} />
         </div>
 
         <div className="space-y-3">

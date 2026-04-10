@@ -14,6 +14,7 @@ import {
 import { db } from "./config";
 import { normalizeRoom } from "../utils/helpers";
 import { logRoomAction } from "./activityLogs";
+import { STATUS } from "../lib/constants";
 
 // Single global listener - call once in app root
 export const subscribeRooms = (callback) => {
@@ -26,27 +27,27 @@ export const subscribeRooms = (callback) => {
 
 export const toggleRoomStatus = async (room, userId) => {
   const ref = doc(db, "rooms", room.id);
-  if (room.status === "free" || room.status === "reserved") {
+  if (room.status === STATUS.FREE || room.status === STATUS.RESERVED) {
     const autoResetAt = Timestamp.fromDate(
       new Date(Date.now() + 2 * 60 * 60 * 1000)
     );
     await updateDoc(ref, {
-      status: "occupied",
+      status: STATUS.OCCUPIED,
       updatedAt: serverTimestamp(),
       updatedBy: userId,
       autoResetAt,
       reservedBy: null,
       reservedUntil: null,
     });
-    await logRoomAction(room.id, "occupied", userId, room.note || "");
+    await logRoomAction(room.id, STATUS.OCCUPIED, userId, room.note || "");
   } else {
     await updateDoc(ref, {
-      status: "free",
+      status: STATUS.FREE,
       updatedAt: serverTimestamp(),
       updatedBy: userId,
       autoResetAt: null,
     });
-    await logRoomAction(room.id, "free", userId, room.note || "");
+    await logRoomAction(room.id, STATUS.FREE, userId, room.note || "");
   }
 };
 
@@ -60,7 +61,7 @@ export const reserveRoom = async ({ roomId, userId, minutes = 30, note = "" }) =
     updatedBy: userId,
     note,
   });
-  await logRoomAction(roomId, "reserved", userId, note);
+  await logRoomAction(roomId, STATUS.RESERVED, userId, note);
 };
 
 export const clearReservation = async ({ roomId, userId }) => {
@@ -80,7 +81,7 @@ export const addRoom = async (name, extraFields = {}) => {
     floor: "",
     type: "classroom",
     capacity: 0,
-    status: "free",
+    status: STATUS.FREE,
     updatedAt: serverTimestamp(),
     updatedBy: null,
     note: "",

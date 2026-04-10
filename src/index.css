@@ -11,6 +11,8 @@
     --bg-elevated: #f8f5ef;
     --bg-soft: #ece4d8;
     --bg-accent: #f5e9d9;
+    --bg-cream: #fdfbf7;
+    --bg-card: #ffffff;
     --accent-start: #f6bf57;
     --accent-mid: #ef8a2e;
     --accent-end: #e56924;
@@ -18,27 +20,31 @@
     --text-muted: #625041;
     --text-subtle: #836c58;
     --border: #d9ccb9;
+    --border-strong: #0f172a;
     --ring: #e77723;
-    --shadow: 15 23 42;
+    --shadow-color: #0f172a;
     --chart-free: #0f9f79;
     --chart-occupied: #d63f55;
   }
 
   .dark {
     color-scheme: dark;
-    --bg: #040404;
-    --bg-elevated: #101010;
-    --bg-soft: #1b1612;
-    --bg-accent: #201710;
+    --bg: #0f0f0f;
+    --bg-elevated: #1a1a1a;
+    --bg-soft: #242424;
+    --bg-accent: #2a2a2a;
+    --bg-cream: #1a1a1a;
+    --bg-card: #242424;
     --accent-start: #f3b34a;
     --accent-mid: #ef8427;
     --accent-end: #dc6322;
     --text: #f0e7dc;
-    --text-muted: #cdbca7;
-    --text-subtle: #b59679;
-    --border: #362617;
+    --text-muted: #a0a0a0;
+    --text-subtle: #808080;
+    --border: #333333;
+    --border-strong: #e2e8f0;
     --ring: #ee8d2f;
-    --shadow: 3 9 20;
+    --shadow-color: #000000;
     --chart-free: #34d399;
     --chart-occupied: #fb7185;
   }
@@ -68,7 +74,7 @@
       Arial,
       'Apple Color Emoji',
       'Segoe UI Emoji';
-    background: var(--bg);
+    background: var(--bg-cream);
     color: var(--text);
   }
 
@@ -90,5 +96,35 @@
 
   .font-handwriting {
     font-family: 'Caveat', 'Comic Sans MS', cursive;
+  }
+
+  /* Sketchy dark mode card */
+  .sketchy-card {
+    @apply rounded-2xl border-2 border-slate-900 bg-white;
+    box-shadow: 4px 4px 0px 0px var(--shadow-color);
+  }
+  
+  .dark .sketchy-card {
+    @apply border-slate-700;
+    background: var(--bg-card);
+    box-shadow: 4px 4px 0px 0px #000000;
+  }
+
+  /* Sketchy dark mode input */
+  .sketchy-input {
+    @apply rounded-lg border-2 border-slate-900 bg-white px-4 py-2 text-sm font-bold text-slate-700 outline-none transition-all;
+  }
+  
+  .dark .sketchy-input {
+    @apply border-slate-600 bg-slate-800 text-slate-200;
+  }
+
+  /* Sketchy dark mode button */
+  .sketchy-btn {
+    @apply rounded-xl border-2 border-slate-900 bg-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-900 ring-2 ring-slate-900/20 transition-all duration-200 hover:bg-yellow-300 active:scale-95;
+  }
+  
+  .dark .sketchy-btn {
+    @apply border-slate-600 bg-yellow-500 text-slate-900;
   }
 }

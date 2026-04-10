@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { subscribeRooms } from "../firebase/rooms";
 import useStore from "../store/useStore";
 import { effectiveStatus, isReservationActive } from "../utils/helpers";
+import { STATUS } from "../lib/constants";
 import toast from "react-hot-toast";
 
 /**
@@ -29,7 +30,7 @@ export const useRoomsListener = () => {
           const prevStatus = effectiveStatus(prevRoom);
           const nextStatus = effectiveStatus(room);
 
-          if (prevStatus !== "free" && nextStatus === "free") {
+          if (prevStatus !== STATUS.FREE && nextStatus === STATUS.FREE) {
             toast.success(`${room.name} is now free`);
           }
 
