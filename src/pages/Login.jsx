@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { loginUser, registerUser } from "../firebase/auth";
 import useStore from "../store/useStore";
 import toast from "react-hot-toast";
+import ThemeToggle from "../components/ThemeToggle";
 
 export default function Login() {
   const [mode, setMode] = useState("login"); // "login" | "register"
@@ -36,30 +37,37 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-slate-50 flex items-center justify-center px-4">
+    <div className="relative flex min-h-screen items-center justify-center px-4">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white font-black text-xl shadow-lg shadow-indigo-200 mb-3">
+          <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-xl font-black text-white shadow-lg shadow-blue-500/30">
             CS
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">CampusSync</h1>
-          <p className="text-slate-500 mt-1">Real-time campus room availability</p>
+          <h1 className="text-3xl font-black tracking-tight" style={{ color: "var(--text)" }}>CampusSync</h1>
+          <p className="mt-1" style={{ color: "var(--text-muted)" }}>Real-time campus room availability</p>
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-8">
+        <div
+          className="rounded-2xl border p-8"
+          style={{ borderColor: "var(--border)", background: "var(--bg-elevated)", boxShadow: "0 14px 32px rgba(var(--shadow), 0.12)" }}
+        >
           {/* Tab toggle */}
-          <div className="flex rounded-xl bg-slate-100 p-1 mb-6">
+          <div className="mb-6 flex rounded-xl p-1" style={{ background: "var(--bg-soft)" }}>
             {["login", "register"].map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
                 className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all capitalize ${
                   mode === m
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "hover:text-slate-700"
                 }`}
+                style={mode === m ? undefined : { color: "var(--text-muted)" }}
               >
                 {m}
               </button>
@@ -77,7 +85,8 @@ export default function Login() {
                     value={form.name}
                     onChange={update("name")}
                     placeholder="Jane Doe"
-                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+                    className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
+                    style={{ borderColor: "var(--border)", color: "var(--text)", background: "var(--bg-elevated)" }}
                   />
                 </div>
                 <div>
@@ -87,7 +96,8 @@ export default function Login() {
                   <select
                     value={form.role}
                     onChange={update("role")}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition bg-white"
+                    className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
+                    style={{ borderColor: "var(--border)", color: "var(--text)", background: "var(--bg-elevated)" }}
                   >
                     <option value="student">Student</option>
                     <option value="faculty">Faculty</option>
@@ -106,7 +116,8 @@ export default function Login() {
                 value={form.email}
                 onChange={update("email")}
                 placeholder="you@university.edu"
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+                className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
+                style={{ borderColor: "var(--border)", color: "var(--text)", background: "var(--bg-elevated)" }}
               />
             </div>
 
@@ -119,7 +130,8 @@ export default function Login() {
                 value={form.password}
                 onChange={update("password")}
                 placeholder="••••••••"
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+                className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition"
+                style={{ borderColor: "var(--border)", color: "var(--text)", background: "var(--bg-elevated)" }}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               />
             </div>
@@ -127,14 +139,14 @@ export default function Login() {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white shadow-md shadow-indigo-200 hover:bg-indigo-700 transition-colors disabled:opacity-60 mt-2"
+              className="mt-2 w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/30 transition-colors hover:bg-blue-700 disabled:opacity-60"
             >
               {loading ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
             </button>
           </div>
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-4">
+        <p className="mt-4 text-center text-xs" style={{ color: "var(--text-subtle)" }}>
           Campus Room Availability System
         </p>
       </div>

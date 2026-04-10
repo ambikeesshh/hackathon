@@ -1,3 +1,69 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+	:root {
+		color-scheme: light;
+		--bg: #efede9;
+		--bg-elevated: #f8f5ef;
+		--bg-soft: #ece4d8;
+		--bg-accent: #f5e9d9;
+		--accent-start: #f6bf57;
+		--accent-mid: #ef8a2e;
+		--accent-end: #e56924;
+		--text: #201a15;
+		--text-muted: #625041;
+		--text-subtle: #836c58;
+		--border: #d9ccb9;
+		--ring: #e77723;
+		--shadow: 15 23 42;
+		--chart-free: #0f9f79;
+		--chart-occupied: #d63f55;
+	}
+
+	.dark {
+		color-scheme: dark;
+		--bg: #040404;
+		--bg-elevated: #101010;
+		--bg-soft: #1b1612;
+		--bg-accent: #201710;
+		--accent-start: #f3b34a;
+		--accent-mid: #ef8427;
+		--accent-end: #dc6322;
+		--text: #f0e7dc;
+		--text-muted: #cdbca7;
+		--text-subtle: #b59679;
+		--border: #362617;
+		--ring: #ee8d2f;
+		--shadow: 3 9 20;
+		--chart-free: #34d399;
+		--chart-occupied: #fb7185;
+	}
+
+	body {
+		@apply antialiased transition-colors duration-300;
+		background:
+			radial-gradient(circle at 14% 12%, rgba(239, 138, 46, 0.2), transparent 42%),
+			radial-gradient(circle at 86% 8%, rgba(246, 191, 87, 0.14), transparent 38%),
+			radial-gradient(circle at 52% 100%, rgba(229, 105, 36, 0.12), transparent 42%),
+			var(--bg);
+		color: var(--text);
+	}
+
+	*:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+}
+
+@layer components {
+	.glass-panel {
+		background: color-mix(in srgb, var(--bg-elevated) 70%, transparent);
+		border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		border-radius: 18px;
+		box-shadow: 0 12px 34px rgba(var(--shadow), 0.12);
+	}
+}

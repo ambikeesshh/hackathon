@@ -1,100 +1,85 @@
 // src/pages/Dashboard.jsx
 import { useMemo, useState } from "react";
 import useStore from "../store/useStore";
-import RoomCard from "../components/RoomCard";
+import DashboardHeader from "../components/dashboard/DashboardHeader";
+import DashboardSidebar from "../components/dashboard/DashboardSidebar";
+import RoomsSection from "../components/dashboard/RoomsSection";
 import { effectiveStatus } from "../utils/helpers";
 
 export default function Dashboard() {
   const rooms = useStore((s) => s.rooms);
   const roomsLoading = useStore((s) => s.roomsLoading);
   const authUser = useStore((s) => s.authUser);
-  const [filter, setFilter] = useState("all"); // "all" | "free" | "occupied"
   const [search, setSearch] = useState("");
+  const [availability, setAvailability] = useState("all");
+  const [roomType, setRoomType] = useState("all");
+  const [minCapacity, setMinCapacity] = useState(0);
 
   const canToggle = authUser?.role === "faculty" || authUser?.role === "admin";
 
   const stats = useMemo(() => {
-    const free = rooms.filter((r) => effectiveStatus(r) === "free").length;
-    return { total: rooms.length, free, occupied: rooms.length - free };
+    const statusCount = rooms.reduce(
+      (acc, room) => {
+        const status = effectiveStatus(room);
+        acc[status] += 1;
+        return acc;
+      },
+      { free: 0, occupied: 0, reserved: 0 }
+    );
+
+    return {
+      total: rooms.length,
+      free: statusCount.free,
+      reserved: statusCount.reserved,
+      occupied: statusCount.occupied,
+    };
   }, [rooms]);
+
+  const typeOptions = useMemo(
+    () => [...new Set(rooms.map((room) => room.type).filter(Boolean))],
+    [rooms]
+  );
 
   const filtered = useMemo(() => {
     return rooms.filter((r) => {
       const status = effectiveStatus(r);
-      const matchFilter = filter === "all" || status === filter;
+      const matchAvailability = availability === "all" || status === availability;
       const matchSearch = r.name.toLowerCase().includes(search.toLowerCase());
-      return matchFilter && matchSearch;
+      const matchType = roomType === "all" || r.type === roomType;
+      const matchCapacity = (r.capacity || 0) >= minCapacity;
+      return matchAvailability && matchSearch && matchType && matchCapacity;
     });
-  }, [rooms, filter, search]);
+  }, [rooms, availability, search, roomType, minCapacity]);
 
   if (roomsLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Room Availability</h1>
-        <p className="text-slate-500 mt-1">Live campus room status · updates instantly</p>
-      </div>
+    <div className="space-y-6">
+      <DashboardHeader />
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        {[
-          { label: "Total Rooms", value: stats.total, color: "bg-slate-100 text-slate-700" },
-          { label: "Available", value: stats.free, color: "bg-emerald-50 text-emerald-700" },
-          { label: "Occupied", value: stats.occupied, color: "bg-red-50 text-red-700" },
-        ].map((s) => (
-          <div key={s.label} className={`rounded-2xl ${s.color} p-4 text-center`}>
-            <p className="text-2xl font-black">{s.value}</p>
-            <p className="text-xs font-semibold mt-0.5 opacity-70">{s.label}</p>
-          </div>
-        ))}
-      </div>
+      <div className="grid items-start gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
+        <DashboardSidebar stats={stats} />
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search rooms…"
-          className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition"
+        <RoomsSection
+          search={search}
+          onSearch={setSearch}
+          availability={availability}
+          onAvailability={setAvailability}
+          roomType={roomType}
+          onRoomType={setRoomType}
+          minCapacity={minCapacity}
+          onMinCapacity={setMinCapacity}
+          typeOptions={typeOptions}
+          rooms={filtered}
+          canToggle={canToggle}
         />
-        <div className="flex rounded-xl border border-slate-200 bg-white p-1 gap-1">
-          {["all", "free", "occupied"].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-all ${
-                filter === f
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
       </div>
-
-      {/* Room Grid */}
-      {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-          <div className="text-5xl mb-3">🏫</div>
-          <p className="font-medium">No rooms found</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((room) => (
-            <RoomCard key={room.id} room={room} showToggle={canToggle} />
-          ))}
-        </div>
-      )}
     </div>
   );
 }

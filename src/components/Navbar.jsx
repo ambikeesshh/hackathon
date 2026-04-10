@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import useStore from "../store/useStore";
 import { logoutUser } from "../firebase/auth";
 import toast from "react-hot-toast";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar() {
   const authUser = useStore((s) => s.authUser);
@@ -20,26 +21,31 @@ export default function Navbar() {
   };
 
   const roleColors = {
-    student: "bg-blue-100 text-blue-700",
-    faculty: "bg-violet-100 text-violet-700",
-    admin: "bg-amber-100 text-amber-700",
+    student: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+    faculty: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+    admin: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-slate-100 bg-white/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link to="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white font-black text-sm">
-            CS
-          </div>
-          <span className="font-black text-slate-900 tracking-tight">CampusSync</span>
-        </Link>
+    <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/70 shadow-sm backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/70">
+      <div className="flex w-full items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-500 text-sm font-black text-white shadow-sm ring-1 ring-orange-500/20">
+              CS
+            </div>
+            <span className="font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+              CampusSync
+            </span>
+          </Link>
+        </div>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           {authUser?.role === "admin" && (
             <Link
               to="/admin"
-              className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
+              className="text-sm font-medium text-gray-500 transition-colors hover:text-orange-600 dark:text-gray-400 dark:hover:text-orange-400"
             >
               Admin
             </Link>
@@ -50,13 +56,13 @@ export default function Navbar() {
             </span>
           )}
           {authUser && (
-            <span className="hidden sm:block text-sm text-slate-500 truncate max-w-[120px]">
+            <span className="hidden max-w-[120px] truncate text-sm text-gray-500 sm:block dark:text-gray-400">
               {authUser.name}
             </span>
           )}
           <button
             onClick={handleLogout}
-            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            className="rounded-xl border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-all duration-200 hover:bg-gray-100 active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             Logout
           </button>

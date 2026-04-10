@@ -1,17 +1,51 @@
 // src/utils/helpers.js
 
+const toMillis = (value) => {
+  if (!value) return null;
+  if (typeof value === "number") return value;
+  if (value.toDate) return value.toDate().getTime();
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+export const isReservationActive = (room) => {
+  if (!room?.reservedBy || !room?.reservedUntil) return false;
+  const reservedUntilMs = toMillis(room.reservedUntil);
+  if (!reservedUntilMs) return false;
+  return Date.now() <= reservedUntilMs;
+};
+
+export const normalizeRoom = (room) => ({
+  building: "",
+  floor: "",
+  type: "classroom",
+  capacity: 0,
+  note: "",
+  reservedBy: null,
+  reservedUntil: null,
+  features: [],
+  coordinates: { x: null, y: null },
+  createdAt: null,
+  autoResetAt: null,
+  ...room,
+});
+
 /**
  * Compute effective status respecting autoResetAt.
  * Does NOT write to DB – purely a UI derivation.
  */
 export const effectiveStatus = (room) => {
-  if (room.status === "occupied" && room.autoResetAt) {
-    const resetMs = room.autoResetAt.toDate
-      ? room.autoResetAt.toDate().getTime()
-      : room.autoResetAt;
+  const normalized = normalizeRoom(room);
+
+  if (normalized.status === "occupied" && normalized.autoResetAt) {
+    const resetMs = toMillis(normalized.autoResetAt);
     if (Date.now() > resetMs) return "free";
+    return "occupied";
   }
-  return room.status;
+
+  if (isReservationActive(normalized)) return "reserved";
+
+  return normalized.status === "occupied" ? "free" : normalized.status;
 };
 
 /** Human-readable "X mins ago" label */
@@ -28,3 +62,20 @@ export const timeAgo = (timestamp) => {
 /** URL-safe room page link */
 export const roomUrl = (roomId) =>
   `${window.location.origin}/room/${roomId}`;
+
+export const hourLabel = (timestamp) => {
+  const ms = toMillis(timestamp);
+  if (!ms) return "Unknown";
+  const date = new Date(ms);
+  return `${String(date.getHours()).padStart(2, "0")}:00`;
+};
+
+export const timeUntil = (timestamp) => {
+  const ms = toMillis(timestamp);
+  if (!ms) return "—";
+  const diff = Math.max(0, Math.floor((ms - Date.now()) / 1000));
+  if (diff < 60) return `${diff}s`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  return `${Math.floor(diff / 86400)}d`;
+};

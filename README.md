@@ -176,10 +176,20 @@ Firestore /rooms  ──onSnapshot──▶  Zustand rooms[]  ──▶  All UI 
 {
   "id": "auto-generated",
   "name": "Computer Lab 101",
+  "building": "Engineering",
+  "floor": "3",
+  "type": "lab",
+  "capacity": 40,
   "status": "free",
   "updatedAt": "<Timestamp>",
   "updatedBy": "<userId | null>",
-  "autoResetAt": "<Timestamp | null>"
+  "note": "Projector under maintenance",
+  "autoResetAt": "<Timestamp | null>",
+  "reservedBy": "<userId | null>",
+  "reservedUntil": "<Timestamp | null>",
+  "features": ["projector", "whiteboard"],
+  "coordinates": { "x": 120, "y": 45 },
+  "createdAt": "<Timestamp>"
 }
 ```
 
@@ -194,13 +204,14 @@ Firestore /rooms  ──onSnapshot──▶  Zustand rooms[]  ──▶  All UI 
 }
 ```
 
-### `logs/{logId}` *(optional analytics)*
+### `activityLogs/{logId}`
 ```json
 {
   "roomId": "<roomId>",
   "userId": "<userId>",
   "action": "occupied",
-  "timestamp": "<Timestamp>"
+  "timestamp": "<Timestamp>",
+  "note": "Optional action note"
 }
 ```
 
