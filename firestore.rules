@@ -1,0 +1,57 @@
+// firestore.rules
+// Deploy with: firebase deploy --only firestore:rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isStudent()  { return isSignedIn() && userRole() == 'student'; }
+    function isFaculty()  { return isSignedIn() && userRole() == 'faculty'; }
+    function isAdmin()    { return isSignedIn() && userRole() == 'admin'; }
+    function isFacultyOrAdmin() { return isFaculty() || isAdmin(); }
+
+    // ── /users ─────────────────────────────────────────────────
+    match /users/{userId} {
+      // Any signed-in user can read their own profile
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      // Allow create on registration (new doc only)
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      // Only admin can update roles
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── /rooms ─────────────────────────────────────────────────
+    match /rooms/{roomId} {
+      // All signed-in users can read rooms
+      allow read: if isSignedIn();
+
+      // Only faculty or admin can update room status fields
+      allow update: if isFacultyOrAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'updatedAt', 'updatedBy', 'autoResetAt']);
+
+      // Only admin can create / delete rooms
+      allow create: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── /logs ──────────────────────────────────────────────────
+    match /logs/{logId} {
+      // Anyone can write logs (faculty/admin trigger them)
+      allow create: if isFacultyOrAdmin();
+      // Only admin reads logs (for analytics)
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+  }
+}
