@@ -12,6 +12,7 @@ export const useActivityLogs = (maxRows = 40, enabled = true) => {
 
     const unsubscribe = subscribeActivityLogs(setLogs, maxRows, (error) => {
       if (error?.code === 'permission-denied') {
+        console.warn('Activity logs permission denied during auth transition');
         setLogs([]);
         return;
       }

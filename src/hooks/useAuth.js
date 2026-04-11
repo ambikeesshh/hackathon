@@ -1,7 +1,10 @@
 // src/hooks/useAuth.js
-import { useEffect } from "react";
-import { subscribeAuthState, fetchUserProfile } from "../features/auth/authService";
-import useStore from "../store/useStore";
+import { useEffect } from 'react';
+import {
+  subscribeAuthState,
+  getUserProfile,
+} from '../features/auth/authService';
+import useStore from '../store/useStore';
 
 /**
  * Bootstraps Firebase Auth listener once.
@@ -13,14 +16,25 @@ export const useAuthBootstrap = () => {
 
   useEffect(() => {
     const unsub = subscribeAuthState(async (firebaseUser) => {
-      if (firebaseUser) {
-        const profile = await fetchUserProfile(firebaseUser.uid);
-        if (profile) setAuthUser(profile);
-        else clearAuth();
-      } else {
+      if (!firebaseUser) {
+        clearAuth();
+        return;
+      }
+
+      try {
+        const profile = await getUserProfile(firebaseUser.uid);
+        if (profile) {
+          setAuthUser(profile);
+          return;
+        }
+
+        clearAuth();
+      } catch (error) {
+        console.error('Failed to load authenticated user profile', error);
         clearAuth();
       }
     });
+
     return unsub;
-  }, []);
+  }, [clearAuth, setAuthUser]);
 };

@@ -1,12 +1,18 @@
 // src/components/RoomCard.jsx
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { effectiveStatus, isReservationActive, timeAgo, timeUntil } from "../utils/helpers";
-import useStore from "../store/useStore";
-import { toggleRoomStatus, addLog } from "../firebase/rooms";
-import toast from "react-hot-toast";
-import { ROLES, STATUS } from "../lib/constants";
-import QRModal from "./QRModal";
+import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import {
+  canManageRoom,
+  effectiveStatus,
+  isReservationActive,
+  timeAgo,
+  timeUntil,
+} from '../utils/helpers';
+import useStore from '../store/useStore';
+import { toggleRoomStatus, addLog } from '../firebase/rooms';
+import toast from 'react-hot-toast';
+import { STATUS } from '../lib/constants';
+import QRModal from './QRModal';
 
 export default function RoomCard({ room, showToggle = false }) {
   const navigate = useNavigate();
@@ -14,37 +20,59 @@ export default function RoomCard({ room, showToggle = false }) {
   const theme = useStore((s) => s.theme);
   const isDark = theme === 'dark';
   const [showQR, setShowQR] = useState(false);
-  
+
   const status = effectiveStatus(room);
   const isFree = status === STATUS.FREE;
   const isReserved = status === STATUS.RESERVED;
-  const canManage = authUser?.role === ROLES.FACULTY || authUser?.role === ROLES.ADMIN;
+  const canManage = canManageRoom(authUser, room.id);
 
   const handleToggle = async (e) => {
     e.stopPropagation();
     if (!canManage) return;
     try {
       await toggleRoomStatus({ ...room, status }, authUser.uid);
-      await addLog(room.id, authUser.uid, isFree ? STATUS.OCCUPIED : STATUS.FREE, room.note || "");
-      toast.success(`${room.name} marked as ${isFree ? STATUS.OCCUPIED : STATUS.FREE}`);
-    } catch {
-      toast.error("Failed to update room status.");
+      await addLog(
+        room.id,
+        authUser.uid,
+        isFree ? STATUS.OCCUPIED : STATUS.FREE,
+        room.note || ''
+      );
+      toast.success(
+        `${room.name} marked as ${isFree ? STATUS.OCCUPIED : STATUS.FREE}`
+      );
+    } catch (error) {
+      console.error('Failed to toggle room from card', error);
+      toast.error(error?.message || 'Failed to update room status.');
     }
   };
 
-  const statusColor = isFree ? "bg-green-400" : isReserved ? "bg-yellow-400" : "bg-red-400";
-  const statusTextColor = isFree ? "text-green-600" : isReserved ? "text-yellow-600" : "text-red-600";
-  const statusBg = isFree 
-    ? isDark ? "bg-green-900/30" : "bg-green-100"
-    : isReserved 
-      ? isDark ? "bg-yellow-900/30" : "bg-yellow-100"
-      : isDark ? "bg-red-900/30" : "bg-red-100";
+  const statusColor = isFree
+    ? 'bg-green-400'
+    : isReserved
+      ? 'bg-yellow-400'
+      : 'bg-red-400';
+  const statusTextColor = isFree
+    ? 'text-green-600'
+    : isReserved
+      ? 'text-yellow-600'
+      : 'text-red-600';
+  const statusBg = isFree
+    ? isDark
+      ? 'bg-green-900/30'
+      : 'bg-green-100'
+    : isReserved
+      ? isDark
+        ? 'bg-yellow-900/30'
+        : 'bg-yellow-100'
+      : isDark
+        ? 'bg-red-900/30'
+        : 'bg-red-100';
 
   return (
     <article
       onClick={() => navigate(`/room/${room.id}`)}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
+        if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           navigate(`/room/${room.id}`);
         }
@@ -57,35 +85,64 @@ export default function RoomCard({ room, showToggle = false }) {
       <span
         className={`absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border-2 ${isDark ? 'border-slate-600' : 'border-slate-900'} px-2.5 py-1 text-xs font-bold uppercase ${statusBg} ${statusTextColor}`}
       >
-        <span className={`h-2 w-2 rounded-full ${statusColor} ${isFree ? 'animate-pulse' : ''}`} />
-        {isFree ? "Free" : isReserved ? "Reserved" : "Occupied"}
+        <span
+          className={`h-2 w-2 rounded-full ${statusColor} ${isFree ? 'animate-pulse' : ''}`}
+        />
+        {isFree ? 'Free' : isReserved ? 'Reserved' : 'Occupied'}
       </span>
 
-      <p className={`mb-1 font-mono text-[10px] uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Room</p>
-      <h3 className={`pr-20 text-lg font-black leading-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{room.name}</h3>
+      <p
+        className={`mb-1 font-mono text-[10px] uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}
+      >
+        Room
+      </p>
+      <h3
+        className={`pr-20 text-lg font-black leading-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
+      >
+        {room.name}
+      </h3>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <span className={`rounded-lg border-2 ${isDark ? 'border-slate-600 bg-slate-800 text-slate-400' : 'border-slate-900 bg-slate-100 text-slate-600'} px-2 py-0.5 text-[10px] font-bold uppercase`}>
-          {(room.type || "classroom")}
+        <span
+          className={`rounded-lg border-2 ${isDark ? 'border-slate-600 bg-slate-800 text-slate-400' : 'border-slate-900 bg-slate-100 text-slate-600'} px-2 py-0.5 text-[10px] font-bold uppercase`}
+        >
+          {room.type || 'classroom'}
         </span>
-        <span className={`rounded-lg border-2 ${isDark ? 'border-yellow-700 bg-yellow-900/30 text-yellow-400' : 'border-slate-900 bg-yellow-100 text-yellow-700'} px-2 py-0.5 text-[10px] font-bold uppercase`}>
+        <span
+          className={`rounded-lg border-2 ${isDark ? 'border-yellow-700 bg-yellow-900/30 text-yellow-400' : 'border-slate-900 bg-yellow-100 text-yellow-700'} px-2 py-0.5 text-[10px] font-bold uppercase`}
+        >
           Cap {room.capacity || 0}
         </span>
       </div>
 
-      <p className={`mt-3 font-mono text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-        {[room.building || "Building N/A", room.floor ? `Floor ${room.floor}` : "Floor N/A"].join(" • ")}
+      <p
+        className={`mt-3 font-mono text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}
+      >
+        {[
+          room.building || 'Building N/A',
+          room.floor ? `Floor ${room.floor}` : 'Floor N/A',
+        ].join(' • ')}
       </p>
 
-      <div className={`mt-4 border-t-2 ${isDark ? 'border-slate-700' : 'border-slate-900'} pt-3`}>
+      <div
+        className={`mt-4 border-t-2 ${isDark ? 'border-slate-700' : 'border-slate-900'} pt-3`}
+      >
         {room.note && (
-          <p className={`mb-2 rounded-lg border ${isDark ? 'border-slate-600 bg-slate-800 text-slate-400' : 'border-slate-300 bg-slate-50 text-slate-600'} px-2 py-1 text-xs font-medium`}>
+          <p
+            className={`mb-2 rounded-lg border ${isDark ? 'border-slate-600 bg-slate-800 text-slate-400' : 'border-slate-300 bg-slate-50 text-slate-600'} px-2 py-1 text-xs font-medium`}
+          >
             {room.note}
           </p>
         )}
-        <p className={`font-mono text-[10px] uppercase ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Updated {timeAgo(room.updatedAt)}</p>
+        <p
+          className={`font-mono text-[10px] uppercase ${isDark ? 'text-slate-600' : 'text-slate-400'}`}
+        >
+          Updated {timeAgo(room.updatedAt)}
+        </p>
         {isReservationActive(room) && room.reservedUntil && (
-          <p className="mt-1 font-bold text-yellow-600">Reserved for {timeUntil(room.reservedUntil)}</p>
+          <p className="mt-1 font-bold text-yellow-600">
+            Reserved for {timeUntil(room.reservedUntil)}
+          </p>
         )}
       </div>
 
@@ -101,11 +158,11 @@ export default function RoomCard({ room, showToggle = false }) {
             onClick={handleToggle}
             className={`flex-1 rounded-xl border-2 border-slate-900 py-2 text-sm font-bold transition-all duration-200 active:scale-95 ${
               isFree || isReserved
-                ? "bg-red-500 text-white hover:bg-red-600"
-                : "bg-green-500 text-white hover:bg-green-600"
+                ? 'bg-red-500 text-white hover:bg-red-600'
+                : 'bg-green-500 text-white hover:bg-green-600'
             }`}
           >
-            {isFree || isReserved ? "Occupy" : "Free"}
+            {isFree || isReserved ? 'Occupy' : 'Free'}
           </button>
         </div>
       )}

@@ -13,13 +13,16 @@ const mapFirebaseError = (error) => {
   return FIREBASE_ERROR_MESSAGES[error.code] || FIREBASE_ERROR_MESSAGES.default;
 };
 
-export const subscribeAuthState = (callback) => onAuthStateChanged(auth, callback);
+export const subscribeAuthState = (callback) =>
+  onAuthStateChanged(auth, callback);
 
-export const fetchUserProfile = async (uid) => {
-  const snap = await getDoc(doc(db, 'users', uid));
-  return snap.exists() ? { uid, ...snap.data() } : null;
-};
-
+/**
+ * Create a user auth account and profile document.
+ * @param {string} name
+ * @param {string} email
+ * @param {string} password
+ * @param {'student'|'faculty'|'admin'} role
+ */
 export const registerUser = async (name, email, password, role) => {
   try {
     const cred = await createUserWithEmailAndPassword(

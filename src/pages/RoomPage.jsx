@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useStore from '../store/useStore';
 import {
+  canManageRoom,
   effectiveStatus,
   isReservationActive,
   timeAgo,
@@ -26,7 +27,7 @@ export default function RoomPage() {
 
   const resolvedRoomId = roomId || resourceId;
   const room = rooms.find((r) => r.id === resolvedRoomId);
-  const canToggle = authUser?.role === ROLES.FACULTY || authUser?.role === ROLES.ADMIN;
+  const canToggle = room ? canManageRoom(authUser, room.id) : false;
 
   if (!room) {
     return (
@@ -59,9 +60,12 @@ export default function RoomPage() {
         isFree || isReserved ? STATUS.OCCUPIED : STATUS.FREE,
         room.note || ''
       );
-      toast.success(`Marked as ${isFree || isReserved ? STATUS.OCCUPIED : STATUS.FREE}`);
-    } catch {
-      toast.error('Failed to update room status.');
+      toast.success(
+        `Marked as ${isFree || isReserved ? STATUS.OCCUPIED : STATUS.FREE}`
+      );
+    } catch (error) {
+      console.error('Failed to toggle room status from room page', error);
+      toast.error(error?.message || 'Failed to update room status.');
     } finally {
       setToggling(false);
     }
@@ -203,12 +207,10 @@ export default function RoomPage() {
           <div className="mb-4 rounded-lg bg-amber-50 border border-amber-100 px-4 py-2.5 text-xs text-amber-700 text-center">
             Auto-resets at{' '}
             {room.autoResetAt.toDate
-              ? room.autoResetAt
-                  .toDate()
-                  .toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
+              ? room.autoResetAt.toDate().toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
               : '—'}
           </div>
         )}
@@ -227,12 +229,19 @@ export default function RoomPage() {
           />
         </div>
 
-        <div className="mb-4">
-          <BookingRequest room={room} />
-        </div>
+        {authUser?.role === ROLES.STUDENT && (
+          <div className="mb-4">
+            <BookingRequest room={room} />
+          </div>
+        )}
 
         <div className="mb-4">
-          <h3 className="mb-2 text-sm font-semibold" style={{ color: 'var(--text)' }}>Booking Requests</h3>
+          <h3
+            className="mb-2 text-sm font-semibold"
+            style={{ color: 'var(--text)' }}
+          >
+            Booking Requests
+          </h3>
           <BookingList resourceId={room.id} />
         </div>
 

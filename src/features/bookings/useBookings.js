@@ -34,6 +34,7 @@ export const useBookings = ({ role, studentId, resourceId } = {}) => {
         setLoading(false);
       },
       (err) => {
+        console.error('Failed to subscribe bookings', err);
         setError(err.message || 'Failed to load bookings');
         setLoading(false);
       }

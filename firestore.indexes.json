@@ -1,13 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "rooms",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "name", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "logs",
       "queryScope": "COLLECTION",
       "fields": [

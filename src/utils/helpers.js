@@ -1,5 +1,5 @@
 // src/utils/helpers.js
-import { STATUS } from '../lib/constants';
+import { ROLES, STATUS } from '../lib/constants';
 
 const toMillis = (value) => {
   if (!value) return null;
@@ -78,4 +78,14 @@ export const timeUntil = (timestamp) => {
   if (diff < 3600) return `${Math.floor(diff / 60)}m`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
   return `${Math.floor(diff / 86400)}d`;
+};
+
+export const canManageRoom = (user, roomId) => {
+  if (!user || !roomId) return false;
+  if (user.role === ROLES.ADMIN) return true;
+  if (user.role !== ROLES.FACULTY) return false;
+  return (
+    Array.isArray(user.assignedResources) &&
+    user.assignedResources.includes(roomId)
+  );
 };

@@ -6,16 +6,16 @@ Real-time campus room availability tracker. Built with React + Vite + Firebase (
 
 ## Stack
 
-| Layer | Tech |
-|-------|------|
-| Frontend | React 18, Vite |
-| Styling | Tailwind CSS v3 |
-| Routing | React Router v6 |
-| State | Zustand (single store) |
-| Charts | Recharts |
-| Notifications | react-hot-toast |
-| QR Codes | qrcode |
-| Backend | Firebase Firestore + Auth |
+| Layer         | Tech                      |
+| ------------- | ------------------------- |
+| Frontend      | React 18, Vite            |
+| Styling       | Tailwind CSS v3           |
+| Routing       | React Router v6           |
+| State         | Zustand (single store)    |
+| Charts        | Recharts                  |
+| Notifications | react-hot-toast           |
+| QR Codes      | qrcode                    |
+| Backend       | Firebase Firestore + Auth |
 
 ---
 
@@ -108,28 +108,38 @@ node scripts/seed.js
 ### 5. Deploy Security Rules
 
 ```bash
-npm install -g firebase-tools
-firebase login
-firebase init   # select Firestore + Hosting
-firebase deploy --only firestore:rules
+npm run firebase:login
+npm run deploy:rules
+npm run deploy:indexes
 ```
 
 ### 6. Deploy to Firebase Hosting
 
 ```bash
-npm run build
-firebase deploy
+npm run deploy:hosting
+```
+
+### 7. One-Command Production Deploy
+
+```bash
+npm run deploy:all
+```
+
+### 8. Safe Preview Deploy (Recommended)
+
+```bash
+npm run deploy:preview
 ```
 
 ---
 
 ## User Roles
 
-| Role | Permissions |
-|------|-------------|
-| `student` | View room status (read-only) |
-| `faculty` | View + toggle room status (free ↔ occupied) |
-| `admin` | View + toggle + add/delete rooms + analytics |
+| Role      | Permissions                                  |
+| --------- | -------------------------------------------- |
+| `student` | View room status (read-only)                 |
+| `faculty` | View + toggle room status (free ↔ occupied)  |
+| `admin`   | View + toggle + add/delete rooms + analytics |
 
 Roles are set in the Firestore `users` collection. During registration via the UI, users can self-select a role (suitable for demo/MVP). For production, restrict role assignment to admin-only writes.
 
@@ -138,6 +148,7 @@ Roles are set in the Firestore `users` collection. During registration via the U
 ## Auto-Reset Logic
 
 When faculty marks a room as **occupied**:
+
 - `autoResetAt` is set to `now + 2 hours`
 - The UI computes `effectiveStatus(room)` client-side
 - If `autoResetAt < now`, the room **displays as free** without a DB write
@@ -160,18 +171,19 @@ Firestore /rooms  ──onSnapshot──▶  Zustand rooms[]  ──▶  All UI 
 
 ## Routes
 
-| Path | Component | Access |
-|------|-----------|--------|
-| `/login` | Login | Public |
-| `/dashboard` | Dashboard | All roles |
-| `/room/:roomId` | RoomPage | All roles (toggle if faculty/admin) |
-| `/admin` | Admin | Admin only |
+| Path            | Component | Access                              |
+| --------------- | --------- | ----------------------------------- |
+| `/login`        | Login     | Public                              |
+| `/dashboard`    | Dashboard | All roles                           |
+| `/room/:roomId` | RoomPage  | All roles (toggle if faculty/admin) |
+| `/admin`        | Admin     | Admin only                          |
 
 ---
 
 ## Firestore Data Model
 
 ### `rooms/{roomId}`
+
 ```json
 {
   "id": "auto-generated",
@@ -194,6 +206,7 @@ Firestore /rooms  ──onSnapshot──▶  Zustand rooms[]  ──▶  All UI 
 ```
 
 ### `users/{userId}`
+
 ```json
 {
   "id": "<Firebase Auth UID>",
@@ -205,6 +218,7 @@ Firestore /rooms  ──onSnapshot──▶  Zustand rooms[]  ──▶  All UI 
 ```
 
 ### `activityLogs/{logId}`
+
 ```json
 {
   "roomId": "<roomId>",

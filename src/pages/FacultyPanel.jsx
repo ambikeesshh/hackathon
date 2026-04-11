@@ -1,7 +1,7 @@
 // src/pages/FacultyPanel.jsx
 import { useMemo, useState } from 'react';
 import useStore from '../store/useStore';
-import { effectiveStatus } from '../utils/helpers';
+import { canManageRoom, effectiveStatus } from '../utils/helpers';
 import { toggleRoomStatus } from '../firebase/rooms';
 import { STATUS, ROLES } from '../lib/constants';
 import toast from 'react-hot-toast';
@@ -11,17 +11,17 @@ export default function FacultyPanel() {
   const rooms = useStore((s) => s.rooms);
   const [busyRooms, setBusyRooms] = useState({});
 
-  const myRooms = rooms;
+  const myRooms = useMemo(() => {
+    if (authUser?.role === ROLES.ADMIN) return rooms;
+    return rooms.filter((room) => canManageRoom(authUser, room.id));
+  }, [authUser, rooms]);
 
   const stats = useMemo(() => {
-    const statusCount = myRooms.reduce(
-      (acc, room) => {
-        const status = effectiveStatus(room);
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      },
-      {}
-    );
+    const statusCount = myRooms.reduce((acc, room) => {
+      const status = effectiveStatus(room);
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
     return {
       total: myRooms.length,
       free: statusCount[STATUS.FREE] || 0,
@@ -31,6 +31,11 @@ export default function FacultyPanel() {
   }, [myRooms]);
 
   const handleToggle = async (room) => {
+    if (!canManageRoom(authUser, room.id)) {
+      toast.error('You are not assigned to this room');
+      return;
+    }
+
     setBusyRooms((prev) => ({ ...prev, [room.id]: true }));
     try {
       await toggleRoomStatus(room, authUser.uid);
@@ -56,19 +61,29 @@ export default function FacultyPanel() {
       <div className="grid grid-cols-4 gap-4">
         <div className="rounded-2xl border-2 border-slate-900 bg-white p-4 shadow-[4px_4px_0px_0px_#0f172a]">
           <p className="text-3xl font-black text-slate-900">{stats.total}</p>
-          <p className="mt-1 font-mono text-xs uppercase text-slate-500">Total</p>
+          <p className="mt-1 font-mono text-xs uppercase text-slate-500">
+            Total
+          </p>
         </div>
         <div className="rounded-2xl border-2 border-slate-900 bg-green-100 p-4 shadow-[4px_4px_0px_0px_#0f172a]">
           <p className="text-3xl font-black text-green-600">{stats.free}</p>
-          <p className="mt-1 font-mono text-xs uppercase text-green-700">Free</p>
+          <p className="mt-1 font-mono text-xs uppercase text-green-700">
+            Free
+          </p>
         </div>
         <div className="rounded-2xl border-2 border-slate-900 bg-red-100 p-4 shadow-[4px_4px_0px_0px_#0f172a]">
           <p className="text-3xl font-black text-red-600">{stats.occupied}</p>
-          <p className="mt-1 font-mono text-xs uppercase text-red-700">Occupied</p>
+          <p className="mt-1 font-mono text-xs uppercase text-red-700">
+            Occupied
+          </p>
         </div>
         <div className="rounded-2xl border-2 border-slate-900 bg-yellow-100 p-4 shadow-[4px_4px_0px_0px_#0f172a]">
-          <p className="text-3xl font-black text-yellow-600">{stats.reserved}</p>
-          <p className="mt-1 font-mono text-xs uppercase text-yellow-700">Reserved</p>
+          <p className="text-3xl font-black text-yellow-600">
+            {stats.reserved}
+          </p>
+          <p className="mt-1 font-mono text-xs uppercase text-yellow-700">
+            Reserved
+          </p>
         </div>
       </div>
 

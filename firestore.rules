@@ -11,15 +11,34 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function userDocPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function hasUserDoc() {
+      return isSignedIn() && exists(userDocPath());
+    }
+
+    function userDoc() {
+      return get(userDocPath()).data;
+    }
+
     function userRole() {
-      // Handle case where user profile doesn't exist yet
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return userDoc.data.role;
+      return hasUserDoc() ? userDoc().role : null;
     }
 
     function hasValidRole() {
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return userDoc != null && userDoc.data.role in ['student', 'faculty', 'admin'];
+      return userRole() in ['student', 'faculty', 'admin'];
+    }
+
+    function assignedResources() {
+      return hasUserDoc() && userDoc().assignedResources is list
+        ? userDoc().assignedResources
+        : [];
+    }
+
+    function canManageResource(resourceId) {
+      return isAdmin() || (isFaculty() && resourceId in assignedResources());
     }
 
     function isStudent()  { return isSignedIn() && hasValidRole() && userRole() == 'student'; }
@@ -35,7 +54,7 @@ service cloud.firestore {
     // ── /users ─────────────────────────────────────────────────
     match /users/{userId} {
       // Any signed-in user can read their own profile
-      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       // Allow create on registration (new doc only)
       allow create: if isSignedIn() && request.auth.uid == userId;
       // Only admin can update roles
@@ -50,7 +69,8 @@ service cloud.firestore {
 
       // Only faculty or admin can update room status fields
       // Must validate: status enum, updatedBy must equal current user
-      allow update: if isFacultyOrAdmin()
+      allow update: if isSignedIn()
+        && canManageResource(roomId)
         && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['status', 'updatedAt', 'updatedBy', 'autoResetAt', 'note', 'reservedBy', 'reservedUntil'])
         && request.resource.data.updatedBy == request.auth.uid
@@ -64,7 +84,16 @@ service cloud.firestore {
     // ── /activityLogs ──────────────────────────────────────────────────
     match /activityLogs/{logId} {
       // Faculty/admin can write logs
-      allow create: if isFacultyOrAdmin();
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && (
+          isAdmin()
+          || (
+            isFaculty()
+            && request.resource.data.roomId is string
+            && request.resource.data.roomId in assignedResources()
+          )
+        );
       // Anyone signed in can read logs
       allow read: if isSignedIn();
       allow update, delete: if false;
@@ -73,20 +102,47 @@ service cloud.firestore {
     // ── /bookings ───────────────────────────────────────────────
     match /bookings/{bookingId} {
       // Students can read their own bookings
-      allow read: if isSignedIn() 
-        && (request.auth.uid == resource.data.studentId || isAdmin() || isFaculty());
-      
+      allow read: if isSignedIn()
+        && (
+          request.auth.uid == resource.data.studentId
+          || isAdmin()
+          || (
+            isFaculty()
+            && resource.data.resourceId is string
+            && resource.data.resourceId in assignedResources()
+          )
+        );
+
       // Students can create booking requests
-      allow create: if isSignedIn() 
+      allow create: if isSignedIn()
         && isStudent()
         && request.resource.data.studentId == request.auth.uid
-        && request.resource.data.status == 'pending';
-      
+        && request.resource.data.status == 'pending'
+        && request.resource.data.resourceId is string
+        && request.resource.data.startTime is string
+        && request.resource.data.endTime is string
+        && request.resource.data.startTime < request.resource.data.endTime
+        && request.resource.data.respondedBy == null
+        && request.resource.data.respondedAt == null
+        && request.resource.data.responseNote == '';
+
       // Faculty can update (approve/decline) for their assigned resources
       // Admin can update any booking
-      allow update: if (isAdmin()) 
-        || (isFaculty() && request.resource.data.status in ['pending', 'approved', 'declined']);
-      
+      allow update: if isSignedIn()
+        && (
+          isAdmin()
+          || (
+            isFaculty()
+            && resource.data.resourceId is string
+            && resource.data.resourceId in assignedResources()
+          )
+        )
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'responseNote', 'respondedBy', 'respondedAt'])
+        && request.resource.data.status in ['approved', 'declined']
+        && request.resource.data.respondedBy == request.auth.uid;
+
       // Only admin can delete
       allow delete: if isAdmin();
     }

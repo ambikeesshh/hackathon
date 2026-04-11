@@ -6,7 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "firebase:cli": "npx --yes firebase-tools",
+    "firebase:login": "npx --yes firebase-tools login",
+    "firebase:whoami": "npx --yes firebase-tools login:list",
+    "deploy:rules": "npx --yes firebase-tools deploy --project campussync-c3d3c --only firestore:rules",
+    "deploy:indexes": "npx --yes firebase-tools deploy --project campussync-c3d3c --only firestore:indexes",
+    "deploy:hosting": "npm run build && npx --yes firebase-tools deploy --project campussync-c3d3c --only hosting:campussync-c3d3c",
+    "deploy:preview": "npm run build && npx --yes firebase-tools hosting:channel:deploy preprod --project campussync-c3d3c --site campussync-c3d3c",
+    "deploy:all": "npm run build && npx --yes firebase-tools deploy --project campussync-c3d3c --only firestore:rules,firestore:indexes,hosting:campussync-c3d3c"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

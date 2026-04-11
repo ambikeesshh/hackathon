@@ -37,6 +37,7 @@ import {
 import { db } from '../firebase/config';
 import ThemeToggle from './ThemeToggle';
 import {
+  canManageRoom,
   effectiveStatus,
   isReservationActive,
   timeAgo,
@@ -794,7 +795,6 @@ export function LiveResourceLedger({
   const [selectedRoomId, setSelectedRoomId] = useState(null);
 
   const isAdmin = authUser?.role === 'admin';
-  const canToggle = authUser?.role === 'admin' || authUser?.role === 'faculty';
 
   const setRoomBusy = (roomId, value) => {
     setBusyByRoom((prev) => ({ ...prev, [roomId]: value }));
@@ -810,7 +810,7 @@ export function LiveResourceLedger({
 
   const handleToggle = async (room) => {
     if (!ensureAuth()) return;
-    if (!canToggle) {
+    if (!canManageRoom(authUser, room.id)) {
       toast.error('Only faculty or admin can toggle room status');
       return;
     }
@@ -831,6 +831,10 @@ export function LiveResourceLedger({
 
   const handleReserve = async (room) => {
     if (!ensureAuth()) return;
+    if (!canManageRoom(authUser, room.id)) {
+      toast.error('You are not assigned to reserve this resource');
+      return;
+    }
 
     const minutes = Number(reservationMinutesByRoom[room.id] || 30);
     const note = reservationNoteByRoom[room.id] || '';
@@ -853,6 +857,13 @@ export function LiveResourceLedger({
 
   const handleClearReservation = async (room) => {
     if (!ensureAuth()) return;
+    if (
+      !canManageRoom(authUser, room.id) &&
+      room.reservedBy !== authUser?.uid
+    ) {
+      toast.error('You are not assigned to clear this reservation');
+      return;
+    }
 
     setRoomBusy(room.id, true);
     try {
@@ -1131,9 +1142,7 @@ export function LiveResourceLedger({
               const reservedByMe = authUser && room.reservedBy === authUser.uid;
               const canClearReservation =
                 reservationActive &&
-                (reservedByMe ||
-                  authUser?.role === 'admin' ||
-                  authUser?.role === 'faculty');
+                (reservedByMe || canManageRoom(authUser, room.id));
               const canReserve = !reservationActive && status === 'free';
               const roomBusy = Boolean(busyByRoom[room.id]);
 
@@ -1225,7 +1234,7 @@ export function LiveResourceLedger({
                         <option value={180}>3 hours</option>
                       </select>
 
-                      {canToggle && (
+                      {canManageRoom(authUser, room.id) && (
                         <button
                           onClick={() => handleToggle(room)}
                           disabled={roomBusy}
@@ -2334,6 +2343,11 @@ export default function SketchyPage() {
       if (mode === 'login') {
         user = await loginUser(form.email.trim(), form.password);
       } else {
+        if (!['student', 'faculty', 'admin'].includes(form.role)) {
+          toast.error('Invalid role selected');
+          return;
+        }
+
         user = await registerUser(
           form.name.trim(),
           form.email.trim(),
@@ -2412,6 +2426,22 @@ export default function SketchyPage() {
     const missingIds = userIds.filter((uid) => !userDirectory[uid]);
     if (missingIds.length === 0) return;
 
+    if (!authUser || authUser.role !== 'admin') {
+      setUserDirectory((prev) => ({
+        ...prev,
+        ...Object.fromEntries(
+          missingIds.map((uid) => [
+            uid,
+            {
+              name: `user-${String(uid).slice(0, 6)}`,
+              role: 'member',
+            },
+          ])
+        ),
+      }));
+      return;
+    }
+
     let cancelled = false;
 
     const loadUserProfiles = async () => {
@@ -2429,7 +2459,11 @@ export default function SketchyPage() {
                 },
               ];
             }
-          } catch {
+          } catch (error) {
+            console.warn('Failed to load user profile for activity log actor', {
+              uid,
+              error,
+            });
             // Use fallback values if profile lookup fails.
           }
 
@@ -2452,7 +2486,7 @@ export default function SketchyPage() {
     return () => {
       cancelled = true;
     };
-  }, [userDirectory, userIds]);
+  }, [authUser, userDirectory, userIds]);
 
   useEffect(() => {
     const lenis = new Lenis({

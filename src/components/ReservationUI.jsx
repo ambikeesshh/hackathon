@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
-import { clearReservation, reserveRoom } from "../firebase/rooms";
-import { isReservationActive, timeUntil } from "../utils/helpers";
-import toast from "react-hot-toast";
+import { useMemo, useState } from 'react';
+import { clearReservation, reserveRoom } from '../firebase/rooms';
+import { isReservationActive, timeUntil } from '../utils/helpers';
+import toast from 'react-hot-toast';
 
 export default function ReservationUI({ room, authUser, canManage }) {
   const [saving, setSaving] = useState(false);
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState('');
 
   const reservationActive = useMemo(() => isReservationActive(room), [room]);
 
@@ -19,10 +19,11 @@ export default function ReservationUI({ room, authUser, canManage }) {
         minutes: 30,
         note: note.trim(),
       });
-      setNote("");
-      toast.success("Room reserved for 30 minutes");
-    } catch {
-      toast.error("Unable to reserve room");
+      setNote('');
+      toast.success('Room reserved for 30 minutes');
+    } catch (error) {
+      console.error('Unable to reserve room', error);
+      toast.error(error?.message || 'Unable to reserve room');
     } finally {
       setSaving(false);
     }
@@ -33,9 +34,10 @@ export default function ReservationUI({ room, authUser, canManage }) {
     setSaving(true);
     try {
       await clearReservation({ roomId: room.id, userId: authUser.uid });
-      toast.success("Reservation cleared");
-    } catch {
-      toast.error("Unable to clear reservation");
+      toast.success('Reservation cleared');
+    } catch (error) {
+      console.error('Unable to clear reservation', error);
+      toast.error(error?.message || 'Unable to clear reservation');
     } finally {
       setSaving(false);
     }
@@ -44,11 +46,20 @@ export default function ReservationUI({ room, authUser, canManage }) {
   if (!canManage) return null;
 
   return (
-    <div className="space-y-3 rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--bg-soft)" }}>
+    <div
+      className="space-y-3 rounded-xl border p-4"
+      style={{ borderColor: 'var(--border)', background: 'var(--bg-soft)' }}
+    >
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold" style={{ color: "var(--text)" }}>Soft Reservation</h3>
-        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${reservationActive ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
-          {reservationActive ? `Active (${timeUntil(room.reservedUntil)} left)` : "Inactive"}
+        <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+          Soft Reservation
+        </h3>
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${reservationActive ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}
+        >
+          {reservationActive
+            ? `Active (${timeUntil(room.reservedUntil)} left)`
+            : 'Inactive'}
         </span>
       </div>
 
@@ -58,7 +69,11 @@ export default function ReservationUI({ room, authUser, canManage }) {
         rows={2}
         placeholder="Optional note for reservation"
         className="w-full resize-none rounded-lg border px-3 py-2 text-sm outline-none"
-        style={{ borderColor: "var(--border)", background: "var(--bg-elevated)", color: "var(--text)" }}
+        style={{
+          borderColor: 'var(--border)',
+          background: 'var(--bg-elevated)',
+          color: 'var(--text)',
+        }}
       />
 
       <div className="flex gap-2">
@@ -74,7 +89,7 @@ export default function ReservationUI({ room, authUser, canManage }) {
             onClick={handleClearReservation}
             disabled={saving}
             className="rounded-lg border px-3 py-2 text-sm font-semibold transition-colors disabled:opacity-60"
-            style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
           >
             Clear
           </button>

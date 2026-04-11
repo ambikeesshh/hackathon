@@ -1,10 +1,10 @@
 // src/hooks/useRooms.js
-import { useEffect, useRef } from "react";
-import { subscribeRooms } from "../firebase/rooms";
-import useStore from "../store/useStore";
-import { effectiveStatus, isReservationActive } from "../utils/helpers";
-import { STATUS } from "../lib/constants";
-import toast from "react-hot-toast";
+import { useEffect, useRef } from 'react';
+import { subscribeRooms } from '../firebase/rooms';
+import useStore from '../store/useStore';
+import { effectiveStatus, isReservationActive } from '../utils/helpers';
+import { STATUS } from '../lib/constants';
+import toast from 'react-hot-toast';
 
 /**
  * Single Firestore onSnapshot listener for all rooms.
@@ -17,34 +17,39 @@ export const useRoomsListener = () => {
   useEffect(() => {
     if (!authUser) return;
 
-    const unsub = subscribeRooms((rooms) => {
-      const previousRooms = previousRoomsRef.current;
+    const unsub = subscribeRooms(
+      (rooms) => {
+        const previousRooms = previousRoomsRef.current;
 
-      if (previousRooms) {
-        const prevMap = new Map(previousRooms.map((room) => [room.id, room]));
+        if (previousRooms) {
+          const prevMap = new Map(previousRooms.map((room) => [room.id, room]));
 
-        rooms.forEach((room) => {
-          const prevRoom = prevMap.get(room.id);
-          if (!prevRoom) return;
+          rooms.forEach((room) => {
+            const prevRoom = prevMap.get(room.id);
+            if (!prevRoom) return;
 
-          const prevStatus = effectiveStatus(prevRoom);
-          const nextStatus = effectiveStatus(room);
+            const prevStatus = effectiveStatus(prevRoom);
+            const nextStatus = effectiveStatus(room);
 
-          if (prevStatus !== STATUS.FREE && nextStatus === STATUS.FREE) {
-            toast.success(`${room.name} is now free`);
-          }
+            if (prevStatus !== STATUS.FREE && nextStatus === STATUS.FREE) {
+              toast.success(`${room.name} is now free`);
+            }
 
-          const hadReservation = isReservationActive(prevRoom);
-          const hasReservation = isReservationActive(room);
-          if (hadReservation && !hasReservation) {
-            toast(`${room.name} reservation expired`, { icon: "!" });
-          }
-        });
+            const hadReservation = isReservationActive(prevRoom);
+            const hasReservation = isReservationActive(room);
+            if (hadReservation && !hasReservation) {
+              toast(`${room.name} reservation expired`, { icon: '!' });
+            }
+          });
+        }
+
+        previousRoomsRef.current = rooms;
+        setRooms(rooms);
+      },
+      (error) => {
+        console.error('Failed to subscribe to rooms', error);
       }
-
-      previousRoomsRef.current = rooms;
-      setRooms(rooms);
-    });
+    );
 
     return unsub;
   }, [authUser, setRooms]);

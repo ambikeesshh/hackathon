@@ -3,14 +3,15 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useStore from '../store/useStore';
 import { toggleRoomStatus } from '../firebase/rooms';
-import { effectiveStatus } from '../utils/helpers';
-import { STATUS, ROLES } from '../lib/constants';
+import { canManageRoom, effectiveStatus } from '../utils/helpers';
+import { STATUS } from '../lib/constants';
 import toast from 'react-hot-toast';
 
 export default function TogglePage() {
   const { resourceId } = useParams();
   const navigate = useNavigate();
   const rooms = useStore((s) => s.rooms);
+  const roomsLoading = useStore((s) => s.roomsLoading);
   const authUser = useStore((s) => s.authUser);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
@@ -23,14 +24,22 @@ export default function TogglePage() {
       return;
     }
 
-    if (authUser.role !== ROLES.FACULTY && authUser.role !== ROLES.ADMIN) {
-      toast.error('You do not have permission to toggle room status');
+    if (roomsLoading) return;
+
+    if (!room) {
+      toast.error('Room not found');
+      navigate('/dashboard');
+      return;
+    }
+
+    if (!canManageRoom(authUser, room.id)) {
+      toast.error('You do not have permission to toggle this room');
       navigate('/dashboard');
       return;
     }
 
     setLoading(false);
-  }, [authUser, resourceId, navigate]);
+  }, [authUser, navigate, resourceId, room, roomsLoading]);
 
   const handleToggle = async () => {
     if (!room || !authUser) return;
@@ -38,9 +47,12 @@ export default function TogglePage() {
     setToggling(true);
     try {
       await toggleRoomStatus(room, authUser.uid);
-      toast.success(`${room.name} is now ${effectiveStatus(room) === STATUS.FREE ? STATUS.OCCUPIED : STATUS.FREE}`);
+      toast.success(
+        `${room.name} is now ${effectiveStatus(room) === STATUS.FREE ? STATUS.OCCUPIED : STATUS.FREE}`
+      );
       navigate(-1);
     } catch (error) {
+      console.error('Failed to toggle room from QR page', error);
       toast.error(error.message || 'Failed to toggle status');
     } finally {
       setToggling(false);
@@ -51,10 +63,26 @@ export default function TogglePage() {
     navigate(-1);
   };
 
-  if (loading || !room || !authUser) {
+  if (loading || roomsLoading || !authUser) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#fdfbf7]">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-yellow-400 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!room) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#fdfbf7] px-4">
+        <div className="rounded-2xl border-2 border-slate-900 bg-white p-6 text-center shadow-[8px_8px_0px_0px_#0f172a]">
+          <p className="text-base font-bold text-slate-900">Room not found.</p>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="mt-4 rounded-xl border-2 border-slate-900 bg-yellow-400 px-4 py-2 text-sm font-bold"
+          >
+            Back to Dashboard
+          </button>
+        </div>
       </div>
     );
   }
