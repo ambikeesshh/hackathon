@@ -327,7 +327,9 @@ export default function AdminAnalytics() {
             />
             <Tooltip
               formatter={(value, name, props) => [value, 'Occupancy Events']}
-              labelFormatter={(label) => props?.payload?.fullName || label}
+              labelFormatter={(label, payload) =>
+                payload?.[0]?.payload?.fullName || label
+              }
               contentStyle={{
                 borderRadius: 8,
                 border: isDark ? '2px solid #334155' : '2px solid #0f172a',
