@@ -1,13 +1,26 @@
-import { useEffect, useState } from "react";
-import { subscribeActivityLogs } from "../firebase/activityLogs";
+import { useEffect, useState } from 'react';
+import { subscribeActivityLogs } from '../firebase/activityLogs';
 
-export const useActivityLogs = (maxRows = 40) => {
+export const useActivityLogs = (maxRows = 40, enabled = true) => {
   const [logs, setLogs] = useState([]);
 
   useEffect(() => {
-    const unsubscribe = subscribeActivityLogs(setLogs, maxRows);
+    if (!enabled) {
+      setLogs([]);
+      return undefined;
+    }
+
+    const unsubscribe = subscribeActivityLogs(setLogs, maxRows, (error) => {
+      if (error?.code === 'permission-denied') {
+        setLogs([]);
+        return;
+      }
+
+      console.error('Failed to subscribe activity logs', error);
+    });
+
     return unsubscribe;
-  }, [maxRows]);
+  }, [enabled, maxRows]);
 
   return logs;
 };

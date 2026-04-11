@@ -29,7 +29,11 @@ import {
 } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import useStore from '../store/useStore';
-import { loginUser, logoutUser, registerUser } from '../features/auth/authService';
+import {
+  loginUser,
+  logoutUser,
+  registerUser,
+} from '../features/auth/authService';
 import { db } from '../firebase/config';
 import ThemeToggle from './ThemeToggle';
 import {
@@ -2236,7 +2240,7 @@ export default function SketchyPage() {
   const roomsLoading = useStore((s) => s.roomsLoading);
   const theme = useStore((s) => s.theme);
   const isDark = theme === 'dark';
-  const logs = useActivityLogs(20);
+  const logs = useActivityLogs(20, Boolean(authUser));
 
   const [authOpen, setAuthOpen] = useState(false);
   const [mode, setMode] = useState('login');
@@ -2331,9 +2335,9 @@ export default function SketchyPage() {
         user = await loginUser(form.email.trim(), form.password);
       } else {
         user = await registerUser(
+          form.name.trim(),
           form.email.trim(),
           form.password,
-          form.name.trim(),
           form.role
         );
       }
@@ -2513,11 +2517,15 @@ export default function SketchyPage() {
   }, [navSectionMap]);
 
   return (
-    <main className={`relative min-h-screen w-full text-slate-800 overflow-x-hidden font-sans selection:bg-yellow-300 selection:text-black ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#fdfbf7]'}`}>
+    <main
+      className={`relative min-h-screen w-full text-slate-800 overflow-x-hidden font-sans selection:bg-yellow-300 selection:text-black ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#fdfbf7]'}`}
+    >
       <SquiggleFilter />
       <GraphPaper />
 
-      <nav className={`fixed top-0 left-0 right-0 z-50 border-b ${isDark ? 'border-slate-700 bg-[#1a1a1a]/95' : 'border-slate-200 bg-[#fdfbf7]/95'} px-4 backdrop-blur-sm`}>
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 border-b ${isDark ? 'border-slate-700 bg-[#1a1a1a]/95' : 'border-slate-200 bg-[#fdfbf7]/95'} px-4 backdrop-blur-sm`}
+      >
         <div className="mx-auto w-full max-w-7xl">
           <div className="flex items-center justify-between gap-3 py-4">
             <div className="flex items-center gap-3">
